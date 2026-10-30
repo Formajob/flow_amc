@@ -1,0 +1,60 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ACX Flow custom variables */
+:root {
+  --navy: #0b1330;
+  --encre: #18213b;
+  --muted: #62708a;
+  --fond: #f6f7fb;
+  --filet: #e4e8f1;
+  --cyan: #26d4ea;
+  --cyan-d: #0aa8bd;
+  --violet: #873cf4;
+}
+
+/* Base styles */
+body {
+  font-family: Inter, ui-sans-serif, system-serif, sans-serif;
+  background: var(--fond);
+  color: var(--encre);
+}
+
+/* Utility classes */
+.btn-pill {
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.btn-navy {
+  background: var(--navy);
+  color: white;
+}
+
+.btn-cyan {
+  background: var(--cyan);
+  color: var(--navy);
+}
+
+.btn-cyan:hover {
+  background: var(--cyan-d);
+}
+
+/* Card styles */
+.card {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+/* Nav link */
+.nav-link {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  color: var(--cyan);
+}
