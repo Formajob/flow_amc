@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1330">
+  <title>Connexion · AMC</title>
+  <style>
+    :root {
+      --navy: #0b1330;
+      --encre: #18213b;
+      --muted: #62708a;
+      --fond: #f6f7fb;
+      --filet: #e4e8f1;
+      --cyan: #26d4ea;
+      --cyan-d: #0aa8bd;
+      --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { min-height: 100%; }
+    body { margin: 0; color: var(--encre); background: var(--fond); font-family: var(--font); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .access { display: grid; grid-template-columns: 1.05fr .95fr; min-height: 100vh; }
+    .panel {
+      background: var(--navy); color: #fff; padding: 32px 36px;
+      display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+    }
+    .panel:before {
+      content: ""; position: absolute; width: 420px; height: 420px; right: -120px; top: -140px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(135,60,244,.45), transparent 68%);
+    }
+    .panel:after {
+      content: ""; position: absolute; width: 380px; height: 380px; left: -140px; bottom: -120px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(38,212,234,.35), transparent 68%);
+    }
+    .panel .inner { position: relative; z-index: 1; }
+    .panel h1 { color: #fff; font-size: 42px; line-height: 1.05; margin: 14px 0; letter-spacing: -.03em; }
+    .panel h1 em { font-style: normal; color: var(--cyan); }
+    .panel p { max-width: 460px; color: #d5deec; line-height: 1.55; }
+    .brand { display: flex; flex-direction: column; gap: 4px; }
+    .brand b { font-size: 18px; letter-spacing: -.03em; }
+    .brand span, .brand a { color: #9eb0c8; font-size: 12px; text-decoration: none; }
+    .kicker { display: flex; align-items: center; gap: 8px; color: var(--cyan-d); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .panel .kicker { color: var(--cyan); }
+    .kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); display: inline-block; }
+    .access-main { display: flex; align-items: center; justify-content: center; padding: 28px 20px; }
+    .access-card { width: min(100%, 460px); background: #fff; border: 1px solid var(--filet); border-radius: 20px; padding: 22px; box-shadow: 0 16px 40px rgba(11,19,48,.06); }
+    .access-card h2 { margin: 8px 0; color: var(--navy); font-size: 26px; letter-spacing: -.03em; }
+    .lead { color: var(--muted); line-height: 1.5; margin: 0 0 8px; }
+    label { display: grid; gap: 6px; margin: 12px 0 0; font-size: 13px; font-weight: 750; color: var(--navy); }
+    input { width: 100%; border: 1px solid var(--filet); border-radius: 12px; padding: 12px; background: #fff; color: var(--navy); }
+    input:focus { outline: 2px solid rgba(38,212,234,.45); border-color: var(--cyan-d); }
+    .gate-error { min-height: 1.2em; margin: 10px 0; color: #9b2c2c; font-size: 13px; font-weight: 700; }
+    .btn { width: 100%; margin-top: 4px; border: 0; border-radius: 999px; padding: 12px 14px; font-weight: 800; background: var(--navy); color: #fff; }
+    .btn:hover { background: #16224a; }
+    .btn:disabled { opacity: .7; cursor: wait; }
+    @media (max-width: 980px) {
+      .access { grid-template-columns: 1fr; }
+      .panel { min-height: auto; }
+      .panel h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+<script>document.documentElement.classList.add("unlocked");document.body.classList.add("ready");</script>
+  <main class="access">
+    <section class="panel">
+      <div class="inner">
+        <div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div>
+        <div class="kicker" style="margin-top:48px"><i></i> Espace AMC</div>
+        <h1>La chaleur humaine,<br><em>au même rythme.</em></h1>
+        <p>L’adresse reconnue arrive ici directement. Le mot de passe se demande sur cet espace, pas sur la page d’avant.</p>
+      </div>
+      <div class="inner" style="color:#9eb0c8;font-size:12px">amc.contact · amc.maroc · +212 632-003837</div>
+    </section>
+    <section class="access-main">
+      <form class="access-card" id="gate-form">
+        <div class="kicker"><i></i> Connexion</div>
+        <h2>Entrer dans l’espace</h2>
+        <p class="lead">L’admin ouvre l’administration. Un mail membre autorisé ouvre la consultation. Aucun autre espace ne s’affiche.</p>
+        <label>Adresse e-mail
+          <input id="gate-email" name="email" type="email" autocomplete="username" required>
+        </label>
+        <label>Mot de passe
+          <input id="gate-password" name="password" type="password" autocomplete="current-password" required>
+        </label>
+        <p class="gate-error" id="gate-error" role="alert"></p>
+        <button class="btn" id="gate-submit" type="submit">Entrer</button>
+      </form>
+    </section>
+  </main>
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var emailInput = document.getElementById('gate-email');
+      var prefill = (params.get('email') || '').trim().toLowerCase();
+      if (prefill) emailInput.value = prefill;
+      if (params.get('role')) {
+        params.delete('role');
+        history.replaceState({}, '', location.pathname + (params.toString() ? '?' + params.toString() : ''));
+      }
+
+      fetch('/api/session', { credentials: 'same-origin' }).then(function (res) {
+        if (!res.ok) return null;
+        return res.json();
+      }).then(function (data) {
+        if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
+          location.replace(data.role === 'saisie' ? 'collecte.html' : 'index.html');
+        }
+      }).catch(function () {});
+
+      document.getElementById('gate-form').addEventListener('submit', function (event) {
+        event.preventDefault();
+        var email = emailInput.value.trim().toLowerCase();
+        var password = document.getElementById('gate-password').value;
+        var err = document.getElementById('gate-error');
+        var btn = document.getElementById('gate-submit');
+        err.textContent = '';
+        btn.disabled = true;
+        btn.textContent = 'Vérification…';
+        fetch('/api/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        }).then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            return { ok: res.ok, data: data };
+          });
+        }).then(function (result) {
+          if (!result.ok) {
+            err.textContent = result.data.message || 'Accès refusé.';
+            btn.disabled = false;
+            btn.textContent = 'Entrer';
+            return;
+          }
+          location.replace(result.data.role === 'saisie' ? 'collecte.html' : 'index.html');
+        }).catch(function () {
+          err.textContent = 'La vérification ne répond pas. Ouvrez l’espace déployé, pas une copie locale.';
+          btn.disabled = false;
+          btn.textContent = 'Entrer';
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

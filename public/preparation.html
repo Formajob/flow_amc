@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1330">
+  <title>Préparation · AMC</title>
+  <style>
+:root {
+  --navy: #0b1330;
+  --encre: #18213b;
+  --muted: #62708a;
+  --fond: #f6f7fb;
+  --filet: #e4e8f1;
+  --cyan: #26d4ea;
+  --cyan-d: #0aa8bd;
+  --vert: #1f8a56;
+  --ambre: #9a6700;
+  --ambre-bg: #fff6e0;
+  --rouge: #b42318;
+  --white: #fff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; min-height: 100%; }
+body {
+  color: var(--encre);
+  background: var(--fond);
+  font-family: Inter, ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; }
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+
+.app { display: grid; grid-template-columns: 232px minmax(0, 1fr); min-height: 100vh; }
+.side {
+  background: var(--navy);
+  color: #fff;
+  padding: 22px 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.brand { display: flex; flex-direction: column; gap: 4px; }
+.brand b { font-size: 18px; letter-spacing: -.03em; }
+.brand span { color: #9eb0c8; font-size: 12px; }
+.brand a { color: #d5deec; text-decoration: none; }
+.brand a:hover { color: var(--cyan); }
+.space {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 12px;
+  background: rgba(255,255,255,.06); color: #d7e4f2; font-size: 12px; font-weight: 700;
+}
+.space i { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); display: inline-block; }
+nav { display: grid; gap: 4px; }
+nav a, .nav-group > button {
+  display: flex; align-items: center; justify-content: space-between; width: 100%;
+  padding: 9px 10px; border: 0; border-radius: 10px; background: transparent;
+  color: #d5deec; text-decoration: none; font-size: 14px; font-weight: 650; text-align: left;
+}
+nav a:hover, .nav-group > button:hover { background: rgba(255,255,255,.06); color: #fff; }
+nav a.on, .nav-group.open > button { background: rgba(38,212,234,.16); color: var(--cyan); }
+.chev { transition: transform .25s ease; }
+.nav-group.open .chev { transform: rotate(90deg); }
+.sub { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .28s ease; }
+.nav-group.open .sub { grid-template-rows: 1fr; }
+.sub > div { overflow: hidden; display: grid; gap: 2px; }
+.sub a { padding: 7px 10px 7px 18px; font-size: 13px; color: #b7c6da; }
+.role { display: flex; gap: 6px; align-items: center; }
+.role span { color: #8ea0b8; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.role button { border: 1px solid rgba(255,255,255,.16); background: transparent; color: #d5deec; border-radius: 999px; padding: 4px 8px; font-size: 11px; font-weight: 800; }
+.role button.on { background: var(--cyan); color: var(--navy); border-color: var(--cyan); }
+.side .foot { margin-top: auto; color: #8ea0b8; font-size: 11px; line-height: 1.45; }
+.main { padding: 22px 22px 48px; max-width: 1180px; }
+.kicker { display: flex; align-items: center; gap: 8px; color: var(--cyan-d); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.kicker i { width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); display: inline-block; }
+h1 { margin: 8px 0 4px; font-size: 28px; letter-spacing: -.03em; color: var(--navy); }
+.lead { margin: 0 0 14px; max-width: 760px; color: var(--muted); font-size: 14.5px; line-height: 1.5; }
+.banner {
+  display: flex; justify-content: space-between; gap: 12px; align-items: center;
+  margin: 0 0 14px; padding: 10px 12px; border-radius: 12px;
+  background: var(--ambre-bg); color: var(--ambre); font-size: 13px; line-height: 1.4;
+}
+.banner b { color: #7a5200; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn, .ghost {
+  border: 0; border-radius: 999px; padding: 8px 14px; font-weight: 800; text-decoration: none;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.btn { background: var(--navy); color: #fff; }
+.btn:hover { background: #16224a; }
+.ghost { background: #fff; color: var(--navy); border: 1px solid var(--filet); }
+.ghost:hover { border-color: #b7c3d8; }
+
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat, .card {
+  background: #fff; border: 1px solid var(--filet); border-radius: 16px; padding: 14px;
+}
+.stat b { display: block; font-size: 26px; letter-spacing: -.03em; color: var(--navy); }
+.stat span, .hint { color: var(--muted); font-size: 12.5px; line-height: 1.4; }
+.stat em { font-style: normal; color: var(--cyan-d); font-size: 12px; font-weight: 800; }
+.grid-2 { display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.card h2 { margin: 0 0 4px; font-size: 16px; color: var(--navy); }
+.card .sub { margin: 0 0 12px; color: var(--muted); font-size: 12.5px; }
+
+.stepper { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0 0 14px; }
+.step {
+  background: #fff; border: 1px solid var(--filet); border-radius: 14px; padding: 10px 12px;
+}
+.step b { display: block; color: var(--navy); font-size: 13px; }
+.step span { color: var(--muted); font-size: 12px; }
+.step.now { border-color: var(--cyan-d); box-shadow: 0 0 0 3px rgba(38,212,234,.18); }
+.step small { display: inline-block; margin-bottom: 4px; color: var(--cyan-d); font-weight: 800; letter-spacing: .04em; text-transform: uppercase; font-size: 10px; }
+
+.gcard { position: relative; overflow: hidden; }
+.gcard .tag {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 28px; height: 22px; padding: 0 7px; border-radius: 999px;
+  color: #fff; font-size: 11px; font-weight: 800;
+}
+.bar { height: 8px; border-radius: 999px; background: #eef2f7; overflow: hidden; margin: 10px 0 6px; }
+.bar i { display: block; height: 100%; width: 0; border-radius: inherit; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+body.ready .bar i { width: var(--w); }
+.donuts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.donut { display: grid; grid-template-columns: 92px 1fr; gap: 12px; align-items: center; }
+.donut svg { width: 92px; height: 92px; }
+.ring { stroke-dashoffset: 289; transition: stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1); }
+body.ready .ring { stroke-dashoffset: var(--off); }
+.vbars { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; min-height: 180px; }
+.vcol { display: grid; justify-items: center; gap: 6px; }
+.vtrack { width: 100%; height: 140px; display: flex; align-items: flex-end; background: linear-gradient(#f8fafc, #eef2f7); border-radius: 12px; padding: 6px; }
+.vtrack i { display: block; width: 100%; height: 0; border-radius: 8px; transition: height .9s cubic-bezier(.2,.8,.2,1); }
+body.ready .vtrack i { height: var(--h); }
+.vcol b { color: var(--navy); font-size: 13px; }
+.vcol span { color: var(--muted); font-size: 12px; }
+.area { width: 100%; height: 180px; display: block; }
+.area path.area-fill { opacity: 0; transition: opacity .6s ease .2s; }
+.area path.line-path { stroke-dasharray: 900; stroke-dashoffset: 900; transition: stroke-dashoffset 1.15s ease; }
+body.ready .area path.area-fill { opacity: 1; }
+body.ready .area path.line-path { stroke-dashoffset: 0; }
+.card { animation: rise .45s ease both; }
+.card:nth-child(2) { animation-delay: .05s; }
+.card:nth-child(3) { animation-delay: .1s; }
+.card:nth-child(4) { animation-delay: .15s; }
+@keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.notice { display: grid; gap: 6px; }
+.notice article { border: 1px solid var(--filet); border-radius: 14px; padding: 12px; background: #fff; animation: rise .4s ease both; }
+.notice h3 { margin: 0; font-size: 15px; color: var(--navy); }
+.notice time { color: var(--muted); font-size: 12px; }
+.composer { display: grid; gap: 8px; margin-bottom: 12px; }
+textarea { width: 100%; min-height: 90px; border: 1px solid var(--filet); border-radius: 12px; padding: 10px; font: inherit; color: var(--navy); resize: vertical; }
+textarea:focus { outline: 3px solid rgba(38,212,234,.35); border-color: var(--cyan-d); }
+.meta { display: flex; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 12px; }
+
+.chart { display: grid; gap: 8px; }
+.line { display: grid; grid-template-columns: 132px 1fr 64px; gap: 8px; align-items: center; font-size: 13px; }
+.line .track { height: 10px; border-radius: 999px; background: #eef2f7; overflow: hidden; position: relative; }
+.line .track i { display: block; height: 100%; width: 0; background: var(--cyan-d); border-radius: inherit; transition: width .9s cubic-bezier(.2,.8,.2,1); }
+body.ready .line .track i { width: var(--w); }
+.line .track s { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--navy); }
+.line b { font-weight: 700; color: var(--navy); }
+.line span { text-align: right; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th { text-align: left; color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; font-weight: 800; }
+th, td { padding: 8px 6px; border-bottom: 1px solid var(--filet); vertical-align: middle; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+input, select {
+  width: 100%; border: 1px solid var(--filet); border-radius: 10px; padding: 8px 10px; background: #fff; color: var(--navy);
+}
+input:focus, select:focus { outline: 3px solid rgba(38,212,234,.35); border-color: var(--cyan-d); }
+label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(--muted); }
+.form { display: grid; gap: 10px; }
+.split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.journal { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.journal li { display: flex; justify-content: space-between; gap: 8px; padding-top: 8px; border-top: 1px solid var(--filet); font-size: 13px; }
+.pill { border-radius: 999px; padding: 2px 7px; font-size: 11px; font-weight: 800; background: #f3f6fb; color: var(--muted); }
+.pill.demo { background: var(--ambre-bg); color: var(--ambre); }
+.check { display: flex; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--filet); font-size: 14px; }
+.check input { width: auto; }
+.note { margin: 10px 0 0; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+.ok { color: var(--vert); font-weight: 750; }
+
+.access { display: grid; grid-template-columns: 1.05fr .95fr; min-height: 100vh; }
+.panel {
+  background: var(--navy); color: #fff; padding: 32px 36px;
+  display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden;
+}
+.panel:before {
+  content: ""; position: absolute; width: 420px; height: 420px; right: -120px; top: -140px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(135,60,244,.45), transparent 68%);
+}
+.panel:after {
+  content: ""; position: absolute; width: 380px; height: 380px; left: -140px; bottom: -120px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(38,212,234,.35), transparent 68%);
+}
+.panel .inner { position: relative; z-index: 1; }
+.panel h1 { color: #fff; font-size: 42px; line-height: 1.05; margin: 14px 0; }
+.panel h1 em { font-style: normal; color: var(--cyan); }
+.panel p { max-width: 460px; color: #d5deec; line-height: 1.55; }
+.points { display: grid; gap: 8px; margin-top: 22px; }
+.points div { padding: 10px 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; }
+.points b { display: block; }
+.points span { color: #b7c6da; font-size: 13px; }
+.access-main { display: flex; align-items: center; justify-content: center; padding: 28px 20px; }
+.access-card { width: min(100%, 460px); background: #fff; border: 1px solid var(--filet); border-radius: 20px; padding: 22px; box-shadow: 0 16px 40px rgba(11,19,48,.06); }
+.access-card h2 { margin: 8px 0; color: var(--navy); font-size: 26px; letter-spacing: -.03em; }
+.links { display: grid; gap: 8px; margin-top: 14px; }
+.links a { display: flex; justify-content: space-between; padding: 10px 12px; border: 1px solid var(--filet); border-radius: 12px; text-decoration: none; font-weight: 750; }
+.links a:hover { border-color: var(--cyan-d); }
+
+.share-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.share {
+  background: #fff; border: 1px solid var(--filet); border-radius: 18px; overflow: hidden;
+}
+.share header { padding: 14px 14px 10px; background: var(--navy); color: #fff; }
+.share header b { display: block; font-size: 20px; letter-spacing: -.03em; }
+.share header span { color: #b7c6da; font-size: 12px; }
+.share ol { list-style: none; margin: 0; padding: 8px 12px 12px; }
+.share li { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--filet); }
+.rank { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 800; }
+.share .who { font-weight: 800; color: var(--navy); }
+.share .pts { text-align: right; font-size: 12px; color: var(--muted); }
+.share footer { padding: 0 14px 12px; color: var(--muted); font-size: 12px; }
+
+@media (max-width: 980px) {
+  .stats, .grid-4, .stepper, .share-grid, .donuts { grid-template-columns: 1fr 1fr; }
+  .grid-2, .access { grid-template-columns: 1fr; }
+  .panel { min-height: auto; }
+}
+@media (max-width: 760px) {
+  .app { display: block; }
+  .side { position: sticky; top: 0; z-index: 5; padding: 12px; }
+  nav { display: flex; gap: 6px; overflow: auto; }
+  nav a { white-space: nowrap; }
+  .side .foot, .space { display: none; }
+  .stats, .grid-4, .stepper, .share-grid, .split { grid-template-columns: 1fr; }
+  .line { grid-template-columns: 1fr; }
+  .main { padding: 16px 12px 36px; }
+  h1 { font-size: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .bar i, .vtrack i { width: var(--w); height: var(--h); }
+}
+.gate label { display: grid; gap: 6px; margin: 12px 0 0; font-size: 13px; font-weight: 750; color: var(--navy); }
+.gate-error { min-height: 1.2em; margin: 10px 0; color: #9b2c2c; font-size: 13px; font-weight: 700; }
+.gate .btn { width: 100%; margin-top: 4px; }
+.consult { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #eef8fb; color: var(--navy); font-size: 13px; font-weight: 700; }
+.session-who { color: #d5deec; font-size: 11px; line-height: 1.35; word-break: break-all; }
+body.role-membre .writes,
+body.role-membre #composer,
+body.role-membre #close,
+body.role-membre #undo,
+body.role-membre #access-admin,
+body.role-membre [data-del] { display: none !important; }
+body.role-membre .main input,
+body.role-membre .main textarea,
+body.role-membre .main select { pointer-events: none; background: #f6f7fb; }
+body.role-saisie #composer,
+body.role-saisie #access-admin,
+body.role-saisie [data-del],
+body.role-saisie #targets { display: none !important; }
+body.role-saisie .side a[href="index.html"],
+body.role-saisie .side a[href="preparation.html"],
+body.role-saisie .side a[href="transport.html"],
+body.role-saisie .side a[href="distribution.html"],
+body.role-saisie .side a[href="classement.html"] { display: none !important; }
+
+@media print {
+  .side, .noprint { display: none !important; }
+  .app { display: block; }
+  .share { break-inside: avoid; }
+}
+
+  </style>
+</head>
+<body>
+<script>document.documentElement.classList.add("unlocked");document.body.classList.add("ready");</script>
+<div class="app"><aside class="side">
+    <div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div>
+    <div class="space"><i></i> Espace AMC</div>
+    <nav>
+      <a href="index.html">Tableau de bord</a>
+      <div class="nav-group open">
+        <button type="button" data-toggle>Campagne <span class="chev">›</span></button>
+        <div class="sub"><div><a href="collecte.html">Collecte</a><a href="preparation.html" class="on">Préparation</a><a href="transport.html">Transport</a><a href="distribution.html">Distribution</a></div></div>
+      </div>
+      <a href="classement.html">Classement</a>
+      <a href="communiques.html">Communiqués</a>
+    </nav>
+    <div class="role" aria-label="Session">
+      <span class="session-who" data-who></span>
+      <button type="button" data-logout>Quitter</button>
+    </div>
+    <div class="foot">Caravane humanitaire · 11e édition<br>Douar Ilissi · 26-27 déc. 2026</div>
+  </aside><main class="main">
+  <div class="kicker"><i></i> Étape 2 · Préparation</div>
+  <h1>Tri et conditionnement</h1>
+  <p class="lead">Après la collecte, on ne croit pas le total déclaré. On compte ce qui est vraiment prêt à partir. L'écart se voit. L'outil ne juge pas l'état d'un vêtement à la place de l'équipe.</p>
+  <section class="card">
+    <h2>Contrôle</h2>
+    <p class="sub">Prêt = pièces qui partent. À écarter = pièces qui ne partent pas. Le reste est l'écart encore non trié.</p>
+    <div style="overflow:auto">
+      <table>
+        <thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Prêt</th><th class="num">À écarter</th><th class="num">Écart</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="note">Suivi proposé : réception au dépôt, tri portable / à laver / à écarter, recomptage, puis constitution des sacs par le convoi. Pas de nom de famille bénéficiaire à ce stade.</p>
+  </section>
+</main></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Activez JavaScript pour entrer dans l’espace AMC.</p></noscript>
+<script>
+(function () {
+  const KEY = 'flow-amc-demo-v1';
+  const ITEMS = [
+    { id: 'pantalons', label: 'Pantalons' },
+    { id: 'pulls', label: 'Pulls en laine' },
+    { id: 'pyjamas', label: 'Pyjamas' },
+    { id: 'peignoirs', label: 'Peignoirs' },
+    { id: 'djellaba_f', label: 'Djellabas femmes' },
+    { id: 'djellaba_h', label: 'Djellabas hommes' },
+    { id: 'jackets', label: 'Jackets' },
+    { id: 'manteaux', label: 'Manteaux' },
+    { id: 'chales', label: 'Châles' },
+    { id: 'argent', label: 'Dons', money: true }
+  ];
+  const GROUPS = [
+    { id: 'A', label: 'Groupe A', color: '#0b1330', members: [['safaa', 'Safaa'], ['yahya', 'Yahya'], ['nour', 'Nour'], ['fatiha', 'Fatiha'], ['badr', 'Badr'], ['nadia', 'Nadia']] },
+    { id: 'B', label: 'Groupe B', color: '#0aa8bd', members: [['zineb', 'Zineb'], ['hamza', 'Hamza'], ['aicha', 'Aicha'], ['yusur', 'Yusur'], ['salma', 'Salma'], ['moncef', 'Moncef']] },
+    { id: 'C', label: 'Groupe C', color: '#c9842a', members: [['yassir', 'Yassir'], ['bouchra', 'Bouchra'], ['zakaria', 'Zakaria'], ['mouhcine', 'Mouhcine'], ['maroua', 'Maroua'], ['wissal', 'Wissal']] },
+    { id: 'D', label: 'Groupe D', color: '#3c5a8a', members: [['bouchra', 'Bouchra'], ['hasnaa', 'Hasnaa'], ['ilyass', 'Ilyass'], ['mohamed', 'Mohamed'], ['ahmed', 'Ahmed'], ['malak', 'Malak']] }
+  ];
+  const DEFAULT_TARGETS = {
+    pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
+    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, argent: 20000
+  };
+  const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31 };
+  const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
+
+  function memberName(groupId, memberId) {
+    const g = GROUPS.find((x) => x.id === groupId);
+    const m = g && g.members.find((x) => x[0] === memberId);
+    return m ? m[1] : '—';
+  }
+  function itemOf(id) { return ITEMS.find((x) => x.id === id); }
+  function fmt(n) { return new Intl.NumberFormat('fr-FR').format(Math.round(Number(n) || 0)); }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function pts(pieces, money) { return pieces + Math.floor(money / 50); }
+  function pct(n, d) { return d > 0 ? Math.max(0, Math.round((n / d) * 100)) : 0; }
+  function daysLeft() {
+    const end = new Date(2026, 11, 26);
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return Math.round((end - now) / 86400000);
+  }
+
+  function seedEntries() {
+    const entries = [];
+    let n = 1;
+    const wsum = WEIGHTS.reduce((a, b) => a + b, 0);
+    GROUPS.forEach((g) => {
+      g.members.forEach((m, i) => {
+        const share = WEIGHTS[i] / wsum;
+        ITEMS.forEach((it) => {
+          const slice = DEFAULT_TARGETS[it.id] / 4;
+          const qty = Math.round(slice * RATES[g.id] * share);
+          if (!qty) return;
+          entries.push({
+            id: 'seed-' + n,
+            at: '2026-10-' + String(24 + (n % 5)).padStart(2, '0') + 'T10:00:00',
+            group: g.id,
+            member: m[0],
+            item: it.id,
+            qty: qty,
+            demo: true
+          });
+          n += 1;
+        });
+      });
+    });
+    return entries;
+  }
+
+  function fresh(demo) {
+    return {
+      v: 1,
+      targets: Object.assign({}, DEFAULT_TARGETS),
+      entries: demo ? seedEntries() : [],
+      prep: {},
+      transport: { charge: false, depart: false, azilal: false, ilissi: false, lead1: '', lead2: '' },
+      distribution: { households: 0, closed: false, lines: {} },
+      notices: defaultNotices()
+    };
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return fresh(true);
+      const s = JSON.parse(raw);
+      if (!s || s.v !== 1) return fresh(true);
+      s.targets = Object.assign({}, DEFAULT_TARGETS, s.targets || {});
+      s.entries = Array.isArray(s.entries) ? s.entries : [];
+      s.prep = s.prep || {};
+      s.transport = Object.assign({ charge: false, depart: false, azilal: false, ilissi: false, lead1: '', lead2: '' }, s.transport || {});
+      s.distribution = Object.assign({ households: 0, closed: false, lines: {} }, s.distribution || {});
+      if (!Array.isArray(s.notices)) s.notices = defaultNotices();
+      return s;
+    } catch (e) {
+      return fresh(true);
+    }
+  }
+  function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
+  function resetDemo() { const s = fresh(true); save(s); return s; }
+  function zero() { const s = fresh(false); save(s); return s; }
+
+  function stats(s) {
+    const byGroup = {};
+    const byMember = {};
+    const byItem = {};
+    GROUPS.forEach((g) => {
+      byGroup[g.id] = { pieces: 0, money: 0, items: {} };
+      byMember[g.id] = {};
+      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, money: 0, name: m[1] }; });
+    });
+    ITEMS.forEach((it) => { byItem[it.id] = 0; });
+    s.entries.forEach((e) => {
+      if (!byGroup[e.group] || byItem[e.item] == null) return;
+      const q = Number(e.qty) || 0;
+      if (e.item === 'argent') {
+        byGroup[e.group].money += q;
+        byItem.argent += q;
+        if (byMember[e.group][e.member]) byMember[e.group][e.member].money += q;
+      } else {
+        byGroup[e.group].pieces += q;
+        byGroup[e.group].items[e.item] = (byGroup[e.group].items[e.item] || 0) + q;
+        byItem[e.item] += q;
+        if (byMember[e.group][e.member]) byMember[e.group][e.member].pieces += q;
+      }
+    });
+    const pieceTarget = ITEMS.filter((it) => !it.money).reduce((sum, it) => sum + (Number(s.targets[it.id]) || 0), 0);
+    const pieces = ITEMS.filter((it) => !it.money).reduce((sum, it) => sum + byItem[it.id], 0);
+    const money = byItem.argent;
+    const moneyTarget = Number(s.targets.argent) || 0;
+    const ranked = GROUPS.map((g) => {
+      const row = byGroup[g.id];
+      return { id: g.id, label: g.label, color: g.color, pieces: row.pieces, money: row.money, score: pts(row.pieces, row.money) };
+    }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
+    return { byGroup, byMember, byItem, pieces, pieceTarget, money, moneyTarget, ranked };
+  }
+
+  function addEntry(group, member, item, qty) {
+    if (role() !== 'admin' && role() !== 'saisie') return load();
+    const s = load();
+    const q = Number(qty);
+    if (!group || !member || !item || !q) return s;
+    s.entries.push({ id: 'e' + Date.now(), at: new Date().toISOString(), group, member, item, qty: q, demo: false });
+    save(s);
+    return s;
+  }
+  function undo() {
+    if (role() !== 'admin' && role() !== 'saisie') return load();
+    const s = load();
+    for (let i = s.entries.length - 1; i >= 0; i -= 1) {
+      if (!s.entries[i].demo) { s.entries.splice(i, 1); break; }
+    }
+    save(s);
+    return s;
+  }
+  function setTarget(id, qty) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    s.targets[id] = Math.max(0, Number(qty) || 0);
+    save(s);
+    return s;
+  }
+  function setPrep(id, field, qty) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    s.prep[id] = s.prep[id] || {};
+    s.prep[id][field] = Math.max(0, Number(qty) || 0);
+    save(s);
+    return s;
+  }
+  function setTransport(patch) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    Object.assign(s.transport, patch);
+    save(s);
+    return s;
+  }
+  function setDistribution(patch) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    Object.assign(s.distribution, patch);
+    save(s);
+    return s;
+  }
+  function setDistLine(id, field, qty) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    s.distribution.lines[id] = s.distribution.lines[id] || {};
+    s.distribution.lines[id][field] = Math.max(0, Number(qty) || 0);
+    save(s);
+    return s;
+  }
+
+  function defaultNotices() {
+    return [
+      { id: 'n1', title: 'Collecte ouverte', body: 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, et les dons.', at: '2026-10-24T09:00:00', author: 'Admin' },
+      { id: 'n2', title: 'Rappel de la caravane', body: 'Douar Ilissi, région d’Azilal, les 26 et 27 décembre 2026. Merci de transmettre les quantités au poste de saisie.', at: '2026-10-26T18:00:00', author: 'Admin' }
+    ];
+  }
+  let session = null;
+  const readyWaiters = [];
+  let booted = false;
+  function role() {
+    if (session && (session.role === 'admin' || session.role === 'saisie')) return session.role;
+    return 'membre';
+  }
+  function onReady(fn) {
+    if (booted) fn(session);
+    else readyWaiters.push(fn);
+  }
+  function addNotice(title, body) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    s.notices.unshift({ id: 'n' + Date.now(), title: title.trim(), body: body.trim(), at: new Date().toISOString(), author: 'Admin' });
+    save(s);
+    return s;
+  }
+  function removeNotice(id) {
+    if (role() !== 'admin') return load();
+    const s = load();
+    s.notices = s.notices.filter((n) => n.id !== id);
+    save(s);
+    return s;
+  }
+  function series(s) {
+    const map = {};
+    s.entries.forEach((e) => {
+      if (e.item === 'argent') return;
+      const day = String(e.at || '').slice(0, 10);
+      if (!day) return;
+      map[day] = (map[day] || 0) + (Number(e.qty) || 0);
+    });
+    let acc = 0;
+    return Object.keys(map).sort().map((d) => {
+      acc += map[d];
+      return { day: d, add: map[d], acc: acc };
+    });
+  }
+  function shareText(groupId) {
+    const s = load();
+    const st = stats(s);
+    const g = GROUPS.find((x) => x.id === groupId);
+    const lines = g.members.map((m) => {
+      const row = st.byMember[g.id][m[0]];
+      return { name: m[1], pieces: row.pieces, money: row.money, score: pts(row.pieces, row.money) };
+    }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'fr'));
+    const head = 'Classement ' + g.label + ' · Caravane AMC · 11e édition';
+    const body = lines.map((row, i) => (i + 1) + '. ' + row.name + ' — ' + fmt(row.pieces) + ' pcs · ' + fmt(row.money) + ' MAD · ' + fmt(row.score) + ' pts').join('\n');
+    const done = pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / 4));
+    return head + '\n' + body + '\nObjectif du groupe : ' + done + ' % des pièces.\nDouar Ilissi · 26-27 déc. 2026';
+  }
+
+  function when(iso) {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  function finish(next) {
+    const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
+    const pages = cleanRole === 'saisie' ? ['collecte.html', 'communiques.html'] : null;
+    session = { email: next.email, name: next.name || '', role: cleanRole, pages: pages };
+    const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    if (pages && pages.indexOf(here) === -1) {
+      location.replace('collecte.html');
+      return;
+    }
+    booted = true;
+    document.documentElement.classList.add('unlocked');
+    document.body.classList.remove('role-admin', 'role-membre', 'role-saisie');
+    document.body.classList.add('role-' + role());
+    const who = document.querySelector('[data-who]');
+    const label = role() === 'admin' ? 'Admin' : (role() === 'saisie' ? 'Saisie' : 'Membre');
+    if (who) who.textContent = (session.name || session.email) + ' · ' + label;
+    if (pages) {
+      document.querySelectorAll('.side a[href]').forEach((link) => {
+        const href = (link.getAttribute('href') || '').split('?')[0];
+        if (pages.indexOf(href) === -1) link.hidden = true;
+      });
+    }
+    const toggle = document.querySelector('[data-toggle]');
+    if (toggle && !toggle.dataset.bound) {
+      toggle.dataset.bound = '1';
+      toggle.addEventListener('click', () => toggle.parentElement.classList.toggle('open'));
+    }
+    const out = document.querySelector('[data-logout]');
+    if (out && !out.dataset.bound) {
+      out.dataset.bound = '1';
+      out.addEventListener('click', logout);
+    }
+    if (role() !== 'admin') {
+      const main = document.querySelector('.main');
+      if (main && !main.querySelector('.consult')) {
+        const note = document.createElement('p');
+        note.className = 'consult';
+        note.textContent = role() === 'saisie'
+          ? 'Saisie ouverte sur la collecte. Les communiqués sont en consultation.'
+          : 'Vue membre. Consultation seulement : les saisies, les objectifs et la publication restent à l’admin.';
+        main.prepend(note);
+      }
+    }
+    readyWaiters.splice(0).forEach((fn) => fn(session));
+    requestAnimationFrame(() => document.body.classList.add('ready'));
+  }
+  async function logout() {
+    try { await fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }); } catch (err) { /* ignore */ }
+    location.href = 'index.html';
+  }
+  function showGate(prefill) {
+    if (document.querySelector('.gate')) return;
+    const host = document.createElement('main');
+    host.className = 'gate access';
+    host.innerHTML = '<section class="panel"><div class="inner"><div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div><div class="kicker" style="margin-top:48px"><i></i> Espace AMC</div><h1>La chaleur humaine,<br><em>au même rythme.</em></h1><p>L’adresse reconnue arrive ici directement. Le mot de passe se demande sur cet espace, pas sur la page d’avant.</p></div><div class="inner" style="color:#9eb0c8;font-size:12px">amc.contact · amc.maroc · +212 632-003837</div></section><section class="access-main"><form class="access-card" id="gate-form"><div class="kicker"><i></i> Connexion</div><h2>Entrer dans l’espace</h2><p class="lead">L’admin ouvre l’administration. Un mail membre autorisé ouvre la consultation. Aucun autre espace ne s’affiche.</p><label>Adresse e-mail<input id="gate-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="gate-password" type="password" autocomplete="current-password" required></label><p class="gate-error" id="gate-error" role="alert"></p><button class="btn" type="submit">Entrer</button></form></section>';
+    document.body.prepend(host);
+    const emailInput = host.querySelector('#gate-email');
+    if (emailInput && prefill) emailInput.value = prefill;
+    host.querySelector('#gate-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const email = host.querySelector('#gate-email').value.trim().toLowerCase();
+      const password = host.querySelector('#gate-password').value;
+      const err = host.querySelector('#gate-error');
+      const btn = host.querySelector('button');
+      err.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Vérification…';
+      try {
+        const res = await fetch('/api/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          err.textContent = data.message || 'Accès refusé.';
+          btn.disabled = false;
+          btn.textContent = 'Entrer';
+          return;
+        }
+        host.remove();
+        const url = new URL(location.href);
+        url.searchParams.delete('email');
+        url.searchParams.delete('from');
+        url.searchParams.delete('role');
+        history.replaceState({}, '', url.pathname + (url.search || ''));
+        finish(data);
+      } catch (failure) {
+        err.textContent = 'La vérification ne répond pas. Ouvrez l’espace déployé, pas une copie locale.';
+        btn.disabled = false;
+        btn.textContent = 'Entrer';
+      }
+    });
+  }
+  async function boot() {
+    document.documentElement.classList.add('unlocked');
+    document.body.classList.add('ready');
+    const params = new URLSearchParams(location.search);
+    if (params.get('role')) {
+      const url = new URL(location.href);
+      url.searchParams.delete('role');
+      history.replaceState({}, '', url.pathname + (url.search || ''));
+    }
+    try {
+      const res = await fetch('/api/session', { credentials: 'same-origin' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
+          finish(data);
+          return;
+        }
+      }
+    } catch (err) { /* la page reste visible */ }
+  }
+  window.AMC = {
+    ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
+    setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
+    addNotice, removeNotice, role, onReady, when,
+    memberName, itemOf, fmt, esc, pts, pct, daysLeft
+  };
+  boot();
+})();
+
+AMC.onReady(function () {
+
+function render() {
+  const s = AMC.load();
+  const st = AMC.stats(s);
+  document.getElementById('rows').innerHTML = AMC.ITEMS.filter((it) => !it.money).map((it) => {
+    const declared = st.byItem[it.id];
+    const prep = s.prep[it.id] || {};
+    const ready = prep.ready || 0;
+    const rejected = prep.rejected || 0;
+    const gap = declared - ready - rejected;
+    return '<tr><td>' + it.label + '</td><td class="num">' + AMC.fmt(declared) + '</td><td class="num"><input data-prep="' + it.id + '" data-field="ready" type="number" min="0" value="' + ready + '"></td><td class="num"><input data-prep="' + it.id + '" data-field="rejected" type="number" min="0" value="' + rejected + '"></td><td class="num">' + AMC.fmt(gap) + '</td></tr>';
+  }).join('');
+}
+document.getElementById('rows').addEventListener('change', (e) => {
+  const id = e.target.getAttribute('data-prep');
+  const field = e.target.getAttribute('data-field');
+  if (id && field) { AMC.setPrep(id, field, e.target.value); render(); }
+});
+render();
+
+});
+
+</script>
+</body>
+</html>
