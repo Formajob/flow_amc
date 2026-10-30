@@ -274,21 +274,66 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
   .share { break-inside: avoid; }
 }
 
+.brand-logo { width: 156px; height: auto; display: block; object-fit: contain; }
+.side { padding: 18px 14px 16px; gap: 14px; }
+nav a, .nav-group > button { gap: 10px; justify-content: flex-start; }
+nav a svg, .nav-group > button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.nav-ico { display: inline-flex; }
+.nav-group .sub, .nav-group.open .sub { grid-template-rows: 1fr; }
+.nav-group .chev, .nav-group.open .chev { transform: rotate(90deg); }
+.hello { margin: 2px 0 6px; font-size: 28px; letter-spacing: -.03em; color: var(--navy); font-weight: 750; }
+.role-pill { display: inline-flex; align-items: center; margin-left: 8px; padding: 3px 9px; border-radius: 999px; background: rgba(38,212,234,.16); color: var(--cyan-d); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.head-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.vol-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.gcard { animation: rise .5s ease both; }
+.gcard:nth-child(2) { animation-delay: .05s; }
+.gcard:nth-child(3) { animation-delay: .1s; }
+.gcard:nth-child(4) { animation-delay: .15s; }
+.gcard:nth-child(5) { animation-delay: .2s; }
+.podium { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.top-card { background: #fff; border: 1px solid var(--filet); border-radius: 18px; padding: 14px; position: relative; overflow: hidden; animation: pop .55s cubic-bezier(.2,.8,.2,1) both; }
+.top-card:nth-child(2) { animation-delay: .06s; }
+.top-card:nth-child(3) { animation-delay: .12s; }
+.top-card:nth-child(4) { animation-delay: .18s; }
+.top-card:nth-child(5) { animation-delay: .24s; }
+.top-card:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--c, var(--cyan)); }
+.medal { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-weight: 800; box-shadow: 0 8px 16px rgba(11,19,48,.12); }
+.medal.gold { background: linear-gradient(145deg, #f3d27a, #c9a227); animation: shine 2.4s ease infinite; }
+.medal.silver { background: linear-gradient(145deg, #f4f7fb, #9aa8bc); color: #18213b; }
+.medal.bronze { background: linear-gradient(145deg, #e7b089, #b5733a); }
+.cheer { margin: 8px 0 0; color: var(--encre); font-size: 13px; line-height: 1.4; }
+.share { animation: rise .45s ease both; }
+.share li.lead { background: rgba(38,212,234,.08); border-radius: 10px; padding: 7px 6px; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes shine { 0%, 100% { filter: saturate(1); } 50% { filter: saturate(1.35) brightness(1.08); } }
+@media (max-width: 1100px) { .vol-grid, .podium { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .vol-grid, .podium, .head-row { grid-template-columns: 1fr; display: grid; } .hello { font-size: 24px; } }
+
+.sheet-filters { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.sheet { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sheet th { text-align: left; color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.sheet td, .sheet th { padding: 8px 6px; border-bottom: 1px solid var(--filet); vertical-align: middle; }
+.qty-picks { display: flex; gap: 6px; }
+.qty-picks button { border: 1px solid var(--filet); background: #fff; border-radius: 999px; padding: 6px 10px; font-weight: 800; color: var(--navy); }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+body.role-membre .sheet-filters input, body.role-membre .sheet-filters select { pointer-events: auto; background: #fff; }
+body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
+@media (max-width: 760px) { .sheet-filters { grid-template-columns: 1fr; } }
+
   </style>
 </head>
 <body>
-<script>document.documentElement.classList.add("unlocked");document.body.classList.add("ready");</script>
 <div class="app"><aside class="side">
-    <div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div>
+    <div class="brand"><img class="brand-logo" src="logo.png" alt="ACX Flow"></div>
     <div class="space"><i></i> Espace AMC</div>
     <nav>
-      <a href="index.html">Tableau de bord</a>
+      <a href="index.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg></span>Tableau de bord</a>
       <div class="nav-group open">
-        <button type="button" data-toggle>Campagne <span class="chev">›</span></button>
-        <div class="sub"><div><a href="collecte.html">Collecte</a><a href="preparation.html">Préparation</a><a href="transport.html">Transport</a><a href="distribution.html" class="on">Distribution</a></div></div>
+        <button type="button" data-toggle><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-1.5 3.5L16 11H5"/></svg></span>Campagne <span class="chev">›</span></button>
+        <div class="sub"><div><a href="collecte.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/></svg></span>Collecte</a><a href="preparation.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-1.5 3.5L16 11H5"/></svg></span>Préparation</a><a href="transport.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></span>Transport</a><a href="distribution.html" class="on"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg></span>Distribution</a></div></div>
       </div>
-      <a href="classement.html">Classement</a>
-      <a href="communiques.html">Communiqués</a>
+      <a href="classement.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h8v6a4 4 0 0 1-8 0z"/><path d="M15 6h3a2 2 0 0 1 0 4h-3"/><path d="M8 20h8"/><path d="M12 14v6"/></svg></span>Classement</a>
+      <a href="communiques.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h14v9H8l-3 3z"/></svg></span>Communiqués</a>
     </nav>
     <div class="role" aria-label="Session">
       <span class="session-who" data-who></span>
@@ -329,7 +374,7 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
 <noscript><p style="padding:24px;font-family:sans-serif">Activez JavaScript pour entrer dans l’espace AMC.</p></noscript>
 <script>
 (function () {
-  const KEY = 'flow-amc-demo-v1';
+  const KEY = 'flow-amc-demo-v2';
   const ITEMS = [
     { id: 'pantalons', label: 'Pantalons' },
     { id: 'pulls', label: 'Pulls en laine' },
@@ -346,13 +391,14 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
     { id: 'A', label: 'Groupe A', color: '#0b1330', members: [['safaa', 'Safaa'], ['yahya', 'Yahya'], ['nour', 'Nour'], ['fatiha', 'Fatiha'], ['badr', 'Badr'], ['nadia', 'Nadia']] },
     { id: 'B', label: 'Groupe B', color: '#0aa8bd', members: [['zineb', 'Zineb'], ['hamza', 'Hamza'], ['aicha', 'Aicha'], ['yusur', 'Yusur'], ['salma', 'Salma'], ['moncef', 'Moncef']] },
     { id: 'C', label: 'Groupe C', color: '#c9842a', members: [['yassir', 'Yassir'], ['bouchra', 'Bouchra'], ['zakaria', 'Zakaria'], ['mouhcine', 'Mouhcine'], ['maroua', 'Maroua'], ['wissal', 'Wissal']] },
-    { id: 'D', label: 'Groupe D', color: '#3c5a8a', members: [['bouchra', 'Bouchra'], ['hasnaa', 'Hasnaa'], ['ilyass', 'Ilyass'], ['mohamed', 'Mohamed'], ['ahmed', 'Ahmed'], ['malak', 'Malak']] }
+    { id: 'D', label: 'Groupe D', color: '#3c5a8a', members: [['bouchra', 'Bouchra'], ['hasnaa', 'Hasnaa'], ['ilyass', 'Ilyass'], ['mohamed', 'Mohamed'], ['ahmed', 'Ahmed'], ['malak', 'Malak']] },
+    { id: 'E', label: 'Groupe E', color: '#873cf4', members: [['ashraf', 'Ashraf'], ['chaymaa', 'Chaymaa']] }
   ];
   const DEFAULT_TARGETS = {
     pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
     djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, argent: 20000
   };
-  const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31 };
+  const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31, E: 0.44 };
   const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
 
   function memberName(groupId, memberId) {
@@ -380,7 +426,7 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
       g.members.forEach((m, i) => {
         const share = WEIGHTS[i] / wsum;
         ITEMS.forEach((it) => {
-          const slice = DEFAULT_TARGETS[it.id] / 4;
+          const slice = DEFAULT_TARGETS[it.id] / GROUPS.length;
           const qty = Math.round(slice * RATES[g.id] * share);
           if (!qty) return;
           entries.push({
@@ -401,7 +447,7 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
 
   function fresh(demo) {
     return {
-      v: 1,
+      v: 2,
       targets: Object.assign({}, DEFAULT_TARGETS),
       entries: demo ? seedEntries() : [],
       prep: {},
@@ -414,18 +460,18 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (!raw) return fresh(true);
+      if (!raw) return fresh(false);
       const s = JSON.parse(raw);
-      if (!s || s.v !== 1) return fresh(true);
+      if (!s || s.v !== 2) return fresh(false);
       s.targets = Object.assign({}, DEFAULT_TARGETS, s.targets || {});
-      s.entries = Array.isArray(s.entries) ? s.entries : [];
+      s.entries = (Array.isArray(s.entries) ? s.entries : []).filter((e) => !e.demo);
       s.prep = s.prep || {};
       s.transport = Object.assign({ charge: false, depart: false, azilal: false, ilissi: false, lead1: '', lead2: '' }, s.transport || {});
       s.distribution = Object.assign({ households: 0, closed: false, lines: {} }, s.distribution || {});
       if (!Array.isArray(s.notices)) s.notices = defaultNotices();
       return s;
     } catch (e) {
-      return fresh(true);
+      return fresh(false);
     }
   }
   function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
@@ -578,7 +624,7 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
     }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'fr'));
     const head = 'Classement ' + g.label + ' · Caravane AMC · 11e édition';
     const body = lines.map((row, i) => (i + 1) + '. ' + row.name + ' — ' + fmt(row.pieces) + ' pcs · ' + fmt(row.money) + ' MAD · ' + fmt(row.score) + ' pts').join('\n');
-    const done = pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / 4));
+    const done = pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / GROUPS.length));
     return head + '\n' + body + '\nObjectif du groupe : ' + done + ' % des pièces.\nDouar Ilissi · 26-27 déc. 2026';
   }
 
@@ -603,6 +649,11 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
     const who = document.querySelector('[data-who]');
     const label = role() === 'admin' ? 'Admin' : (role() === 'saisie' ? 'Saisie' : 'Membre');
     if (who) who.textContent = (session.name || session.email) + ' · ' + label;
+    const hello = document.querySelector('[data-hello]');
+    if (hello) {
+      const name = session.name || String(session.email || '').split('@')[0] || 'à vous';
+      hello.innerHTML = 'Bonjour ' + esc(name) + ' <span class="role-pill">' + label + '</span>';
+    }
     if (pages) {
       document.querySelectorAll('.side a[href]').forEach((link) => {
         const href = (link.getAttribute('href') || '').split('?')[0];
@@ -682,6 +733,19 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
       }
     });
   }
+  async function refresh() {
+    try {
+      const res = await fetch('/api/entries', { credentials: 'same-origin' });
+      if (!res.ok) return load();
+      const data = await res.json();
+      const s = load();
+      s.entries = Array.isArray(data.entries) ? data.entries : [];
+      save(s);
+      return s;
+    } catch (err) {
+      return load();
+    }
+  }
   async function boot() {
     document.documentElement.classList.add('unlocked');
     document.body.classList.add('ready');
@@ -696,16 +760,18 @@ body.role-saisie .side a[href="classement.html"] { display: none !important; }
       if (res.ok) {
         const data = await res.json();
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
+          await refresh();
           finish(data);
           return;
         }
       }
-    } catch (err) { /* la page reste visible */ }
+    } catch (err) { /* porte */ }
+    showGate('');
   }
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, onReady, when,
+    addNotice, removeNotice, role, onReady, when, refresh,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft
   };
   boot();
