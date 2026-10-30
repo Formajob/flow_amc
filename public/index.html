@@ -939,63 +939,11 @@ document.getElementById('targets').addEventListener('change', (e) => {
   const id = e.target.getAttribute('data-target');
   if (id) { AMC.setTarget(id, e.target.value); render(); }
 });
-async function loadMembers() {
-  const box = document.getElementById('access-admin');
-  if (!box || AMC.role() !== 'admin') return;
-  box.hidden = false;
-  const list = document.getElementById('member-list');
-  try {
-    const res = await fetch('/api/members', { credentials: 'same-origin' });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      list.innerHTML = '<li>' + AMC.esc(data.message || 'Liste indisponible.') + '</li>';
-      return;
-    }
-    const rows = data.members || [];
-    list.innerHTML = rows.length ? rows.map((m) => '<li><div><b>' + AMC.esc(m.email) + '</b><br><span class="hint">Vue membre</span></div><button class="ghost" type="button" data-rm="' + AMC.esc(m.email) + '">Retirer</button></li>').join('') : '<li>Aucun mail membre pour l’instant.</li>';
-  } catch (err) {
-    list.innerHTML = '<li>La liste se charge sur l’espace déployé.</li>';
-  }
-}
-document.getElementById('member-form').onsubmit = async (e) => {
-  e.preventDefault();
-  if (AMC.role() !== 'admin') return;
-  const msg = document.getElementById('member-msg');
-  msg.textContent = 'Enregistrement…';
-  const res = await fetch('/api/members', {
-    method: 'POST',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      email: document.getElementById('member-email').value.trim(),
-      password: document.getElementById('member-pass').value
-    })
-  });
-  const data = await res.json().catch(() => ({}));
-  msg.textContent = data.message || 'Ajout impossible.';
-  if (data.snippet) msg.textContent += ' ' + data.snippet;
-  if (data.saved) e.target.reset();
-  loadMembers();
-};
-document.getElementById('member-list').addEventListener('click', async (e) => {
-  const email = e.target.getAttribute('data-rm');
-  if (!email || AMC.role() !== 'admin') return;
-  const res = await fetch('/api/members', {
-    method: 'DELETE',
-    credentials: 'same-origin',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email: email })
-  });
-  const data = await res.json().catch(() => ({}));
-  document.getElementById('member-msg').textContent = data.message || '';
-  loadMembers();
-});
 render();
-loadMembers();
 
 });
 
 </script>
 <script src="support-widget.js"></script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a52b02d6bc26cc4c',t:'MTc5MzM2OTUwNg=='};var l=window.parent.location,o;try{o=new URL(l.origin).origin}catch(e){try{o=new URL(new URL(l.href).origin).origin}catch(e){o=''}}var u='/cdn-cgi/challenge-platform/scripts/jsd/main.js?ray=a52b02d6bc26cc4c',a=document.createElement('script');a.src=o?new URL(u,o).href:u;document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
