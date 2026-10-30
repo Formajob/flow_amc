@@ -320,11 +320,100 @@ body.role-membre .sheet-filters input, body.role-membre .sheet-filters select { 
 body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
 @media (max-width: 760px) { .sheet-filters { grid-template-columns: 1fr; } }
 
+.rank-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.rank-head .lead { margin-bottom: 0; max-width: 640px; }
+.extracts { display: flex; gap: 10px; flex: 0 0 auto; align-items: center; }
+#pdf-msg:empty { display: none; }
+.extract {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 0; border-radius: 999px; padding: 10px 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 800; letter-spacing: -.01em; cursor: pointer;
+  animation: extract-in .6s cubic-bezier(.2,.8,.2,1) both;
+}
+.extract svg { width: 16px; height: 16px; flex: 0 0 16px; animation: extract-bob 1.8s ease-in-out infinite; }
+.extract::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: translateX(-140%); animation: extract-sheen 2.8s ease-in-out infinite; pointer-events: none;
+}
+.extract-report { background: var(--navy); color: #fff; box-shadow: 0 10px 22px rgba(11,19,48,.18); animation-delay: .05s; }
+.extract-certs { background: linear-gradient(145deg, #f6dc8d, #c9a227); color: #18213b; box-shadow: 0 10px 22px rgba(201,162,39,.32); animation-delay: .16s; }
+.extract-report::after { animation-delay: .4s; }
+.extract:hover { transform: translateY(-3px); }
+.extract-report:hover { box-shadow: 0 14px 26px rgba(11,19,48,.28); }
+.extract-certs:hover { box-shadow: 0 14px 26px rgba(201,162,39,.42); }
+.extract:hover svg { animation: extract-drop .45s ease; }
+.extract:disabled { opacity: .6; transform: none; cursor: wait; }
+@keyframes extract-in { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes extract-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+@keyframes extract-drop { 0% { transform: translateY(-2px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+@keyframes extract-sheen { 0%, 55% { transform: translateX(-140%); } 100% { transform: translateX(320%); } }
+@media (prefers-reduced-motion: reduce) {
+  .extract, .extract svg, .extract::after { animation: none; }
+}
+.assoc { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid var(--filet); border-radius: 16px; padding: 12px 14px; margin: 12px 0; }
+.brand-chip { background: var(--navy); border-radius: 12px; padding: 9px 12px; flex: 0 0 auto; }
+.brand-chip img { width: 132px; height: auto; display: block; }
+.assoc b { color: var(--navy); }
+.assoc-meta { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin-top: 3px; }
+.place-tag { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.top-card.lead-place { box-shadow: 0 14px 28px rgba(11,19,48,.08); }
+.section-label { margin: 4px 0 10px; font-size: 16px; color: var(--navy); }
+.share header .subhead { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.share header .pill { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: rgba(255,255,255,.16); border-radius: 999px; padding: 3px 8px; }
+@media (max-width: 760px) {
+  .rank-head, .assoc { display: grid; }
+  .rank-page .stats { grid-template-columns: 1fr 1fr; }
+}
+
+.support-line { color: #9eb0c8; font-size: 13px; line-height: 1.5; }
+.support-line a { color: #d5deec; text-decoration: none; }
+.nav-toggle {
+  display: none; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px; background: transparent; padding: 0; align-items: center; justify-content: center;
+  flex-direction: column; gap: 5px; flex: 0 0 42px;
+}
+.nav-toggle span { display: block; width: 16px; height: 2px; border-radius: 2px; background: #fff; transition: transform .2s ease, opacity .2s ease; }
+.side.is-open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.side.is-open .nav-toggle span:nth-child(2) { opacity: 0; }
+.side.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+@media (max-width: 760px) {
+  .app { display: block; padding-top: 64px; }
+  .app > .side {
+    position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 30;
+    display: flex; flex-direction: row; align-items: center; gap: 10px;
+    padding: 8px 12px; overflow: visible;
+  }
+  .app > .side .brand-logo { width: 118px; }
+  .app > .side .space, .app > .side .foot { display: none; }
+  .app > .side .role { display: none; }
+  .nav-toggle { display: inline-flex; }
+  .app > .side nav {
+    display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; z-index: 31;
+    background: var(--navy); padding: 8px 12px 88px; overflow: auto;
+  }
+  .app > .side.is-open nav { display: grid; }
+  .app > .side.is-open .role {
+    display: flex; position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 32;
+    justify-content: space-between;
+  }
+  .app > .side nav a { white-space: normal; }
+  body.nav-open { overflow: hidden; }
+  body.nav-open .acxsw-fab, body.nav-open .acxsw-panel { display: none; }
+  .panel { padding: 22px 16px; }
+  .panel h1 { font-size: 28px; }
+  .access-main { padding: 16px; }
+  .main { padding: 16px 12px 40px; }
+  .extracts { flex-wrap: wrap; }
+}
+
   </style>
 </head>
 <body>
 <div class="app"><aside class="side">
     <div class="brand"><img class="brand-logo" src="logo.png" alt="ACX Flow"></div>
+    <button type="button" class="nav-toggle" data-nav aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="space"><i></i> Espace AMC</div>
     <nav>
       <a href="index.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg></span>Tableau de bord</a>
@@ -368,6 +457,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     { id: 'jackets', label: 'Jackets' },
     { id: 'manteaux', label: 'Manteaux' },
     { id: 'chales', label: 'Châles' },
+    { id: 'livres', label: 'Livres' },
     { id: 'argent', label: 'Dons', money: true }
   ];
   const GROUPS = [
@@ -379,7 +469,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   ];
   const DEFAULT_TARGETS = {
     pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
-    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, argent: 20000
+    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, livres: 0, argent: 20000
   };
   const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31, E: 0.44 };
   const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
@@ -561,6 +651,28 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   let session = null;
   const readyWaiters = [];
   let booted = false;
+  function profile() {
+    if (!session) return null;
+    return { full_name: session.name || '', email: session.email || '', role: role() };
+  }
+  function bindNav() {
+    const side = document.querySelector('.side');
+    const btn = document.querySelector('[data-nav]');
+    if (!side || !btn || btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      const open = side.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('nav-open', open);
+    });
+    side.querySelectorAll('nav a').forEach((link) => {
+      link.addEventListener('click', () => {
+        side.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('nav-open');
+      });
+    });
+  }
   function role() {
     if (session && (session.role === 'admin' || session.role === 'saisie')) return session.role;
     return 'membre';
@@ -631,6 +743,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     document.body.classList.add('role-' + role());
     const who = document.querySelector('[data-who]');
     const label = role() === 'admin' ? 'Admin' : (role() === 'saisie' ? 'Saisie' : 'Membre');
+    window.__AMC_PROFILE = { full_name: session.name || '', email: session.email || '', role: role() };
     if (who) who.textContent = (session.name || session.email) + ' · ' + label;
     const hello = document.querySelector('[data-hello]');
     if (hello) {
@@ -675,7 +788,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     if (document.querySelector('.gate')) return;
     const host = document.createElement('main');
     host.className = 'gate access';
-    host.innerHTML = '<section class="panel"><div class="inner"><div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div><div class="kicker" style="margin-top:48px"><i></i> Espace AMC</div><h1>La chaleur humaine,<br><em>au même rythme.</em></h1><p>L’adresse reconnue arrive ici directement. Le mot de passe se demande sur cet espace, pas sur la page d’avant.</p></div><div class="inner" style="color:#9eb0c8;font-size:12px">amc.contact · amc.maroc · +212 632-003837</div></section><section class="access-main"><form class="access-card" id="gate-form"><div class="kicker"><i></i> Connexion</div><h2>Entrer dans l’espace</h2><p class="lead">L’admin ouvre l’administration. Un mail membre autorisé ouvre la consultation. Aucun autre espace ne s’affiche.</p><label>Adresse e-mail<input id="gate-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="gate-password" type="password" autocomplete="current-password" required></label><p class="gate-error" id="gate-error" role="alert"></p><button class="btn" type="submit">Entrer</button></form></section>';
+    host.innerHTML = '<section class="panel"><div class="inner"><div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div><div class="kicker" style="margin-top:48px"><i></i> Espace AMC</div><h1>La chaleur humaine,<br><em>au même rythme.</em></h1></div><div class="inner support-line">support@acx.ma · <a href="https://flow.acx.ma/">flow.acx.ma</a> · <a href="tel:+212634232006">+212 634 232 006</a></div></section><section class="access-main"><form class="access-card" id="gate-form"><div class="kicker"><i></i> Connexion</div><h2>Entrer dans l’espace</h2><p class="lead">L’admin ouvre l’administration. Un mail membre autorisé ouvre la consultation. Aucun autre espace ne s’affiche.</p><label>Adresse e-mail<input id="gate-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="gate-password" type="password" autocomplete="current-password" required></label><p class="gate-error" id="gate-error" role="alert"></p><button class="btn" type="submit">Entrer</button></form></section>';
     document.body.prepend(host);
     const emailInput = host.querySelector('#gate-email');
     if (emailInput && prefill) emailInput.value = prefill;
@@ -732,6 +845,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   async function boot() {
     document.documentElement.classList.add('unlocked');
     document.body.classList.add('ready');
+    bindNav();
     const params = new URLSearchParams(location.search);
     if (params.get('role')) {
       const url = new URL(location.href);
@@ -754,7 +868,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, onReady, when, refresh,
+    addNotice, removeNotice, role, profile, onReady, when, refresh,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft
   };
   boot();
@@ -785,5 +899,6 @@ render();
 });
 
 </script>
+<script src="support-widget.js"></script>
 </body>
 </html>
