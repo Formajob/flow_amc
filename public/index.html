@@ -393,10 +393,19 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; z-index: 31;
     background: var(--navy); padding: 8px 12px 88px; overflow: auto;
   }
-  .app > .side.is-open nav { display: grid; }
+  .app > .side.is-open nav {
+    display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px;
+  }
+  .app > .side nav > a,
+  .app > .side nav > .nav-group { align-self: start; width: 100%; height: auto; flex: 0 0 auto; }
+  .app > .side nav a,
+  .app > .side .nav-group > button { height: auto; min-height: 44px; }
+  .app > .side .sub a { min-height: 40px; padding-left: 28px; }
   .app > .side.is-open .role {
-    display: flex; position: fixed; left: 12px; right: 12px; bottom: 16px; z-index: 32;
-    justify-content: space-between;
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 32;
+    justify-content: space-between; align-items: center; gap: 10px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    background: #0b1330; border-top: 1px solid rgba(255,255,255,.08);
   }
   .app > .side nav a { white-space: normal; }
   body.nav-open { overflow: hidden; }
