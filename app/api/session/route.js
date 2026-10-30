@@ -1,111 +1,87 @@
-import { NextResponse } from "next/server"
-import crypto from "crypto"
+import { NextResponse } from 'next/server'
+import { createRequire } from 'node:module'
 
-export const runtime = "nodejs"
-export const dynamic = "force-dynamic"
+const require = createRequire(import.meta.url)
+const auth = require('../../../lib/amc-auth.js')
 
-const PEOPLE = [
-  { email: "zouzou.douni@gmail.com", name: "Zineb Elagbi", role: "admin", hash: "scrypt$UXxn-BYhhLbhkwaRvfSRWw$9Iw3TwPgyspjE69Gp9ZO-BJGQPNOpjZFA2MqKUdnxfw" },
-  { email: "achetoukch96@gmail.com", name: "Chaimaa Achetouk", role: "admin", hash: "scrypt$nvmeBj6SRWvK7L9NcoG9fA$LTviEaJNAoEg0RP_PEmYPAcFhMQEhqbBcS3vlZ41ckE" },
-  { email: "bouchroub.a@gmail.com", name: "Ashraf", role: "membre", hash: "scrypt$rbHEaQbPd_pZ4E1WF89Qig$zj6T8h843I2pmIFFFL0dsA4nSn2WkE2XwRYJPAhjy8Q" },
-  { email: "yassirkrami01@gmail.com", name: "Yassir", role: "membre", hash: "scrypt$zNXOF30NN_WG2Q_aXFXn_A$w46XL7pAfe6NNmIxKRPMbDET2kf2sVgVOMb4GtDQaNQ" },
-  { email: "abassihamza14@gmail.com", name: "Hamza", role: "membre", hash: "scrypt$SAhm9gex49Xv2kRj9u8lVw$3lfdEmBjqVnUREo9v45P7MNxzcTfI0kx13I0cp8szLE" },
-  { email: "hassnaalachgar1995@gmail.com", name: "Hassnaa", role: "membre", hash: "scrypt$i43k6ZYUmTvWbaQ-tKd8qA$7lB8InV6adhf07muehPDv_E_NiLHnKaBDYFHFQ5LLRE" },
-  { email: "scaliougirl@gmail.com", name: "Bouchra", role: "membre", hash: "scrypt$bohPsCkB-l6XRXjQktBfGA$N3olTTYxHioyEnAI-WGHhUZPvuBQRGhX2NJw6v6nD2Q" },
-  { email: "s.safaasamih@gmail.com", name: "Safaa", role: "membre", hash: "scrypt$zYX_zQy7mlqQ-5yDfVKEiA$ihQnwJSdIxLlU_YrVO5GlxsiVF_uT53puB6tkYM76ds" },
-  { email: "mohamedyahyajbir@gmail.com", name: "Yahya", role: "saisie", hash: "scrypt$TKubEubWYe_pKZvYEIEmtA$Rl57aOaedqIwN5bI7ZXx-uQ6FPAYqDYRPovl4MNm3eE" }
-]
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-function pagesFor(role) {
-  if (role === "saisie") return ["collecte.html", "communiques.html"]
-  return ["index.html", "collecte.html", "preparation.html", "transport.html", "distribution.html", "classement.html", "communiques.html"]
+const failures = new Map()
+
+function rowOf(key) {
+  const now = Date.now()
+  const row = failures.get(key) || { n: 0, at: now }
+  if (now - row.at > 15 * 60 * 1000) {
+    row.n = 0
+    row.at = now
+  }
+  failures.set(key, row)
+  return row
 }
 
-function checkPassword(password, stored) {
-  const parts = String(stored || "").split("$")
-  if (parts.length !== 3 || parts[0] !== "scrypt") return false
-  if (!password || String(password).length < 8) return false
-  try {
-    const got = crypto.scryptSync(String(password), parts[1], 32)
-    const exp = Buffer.from(parts[2], "base64url")
-    return got.length === exp.length && crypto.timingSafeEqual(got, exp)
-  } catch (err) {
-    return false
+function asReq(request) {
+  return {
+    headers: {
+      cookie: request.headers.get('cookie') || '',
+      'x-forwarded-proto': request.headers.get('x-forwarded-proto') || '',
+      'x-forwarded-for': request.headers.get('x-forwarded-for') || ''
+    }
   }
 }
 
-function secret() {
-  const value = String(process.env.AMC_SESSION_SECRET || "")
-  return value.length >= 16 ? value : "amc-localhost-session-2026"
-}
-
-function sign(data) {
-  const body = Buffer.from(JSON.stringify(data)).toString("base64url")
-  const sig = crypto.createHmac("sha256", secret()).update(body).digest("base64url")
-  return body + "." + sig
-}
-
-function readToken(token) {
-  if (!token || token.indexOf(".") < 0) return null
-  const parts = token.split(".")
-  if (parts.length !== 2) return null
-  const expected = crypto.createHmac("sha256", secret()).update(parts[0]).digest("base64url")
-  const left = Buffer.from(parts[1])
-  const right = Buffer.from(expected)
-  if (left.length !== right.length || !crypto.timingSafeEqual(left, right)) return null
-  try {
-    const data = JSON.parse(Buffer.from(parts[0], "base64url").toString("utf8"))
-    if (!data || data.exp < Date.now()) return null
-    return data
-  } catch (err) {
-    return null
-  }
-}
-
-function cookieValue(req) {
-  const raw = req.headers.get("cookie") || ""
-  const item = raw.split(";").map((s) => s.trim()).find((s) => s.indexOf("amc_session=") === 0)
-  if (!item) return ""
-  try { return decodeURIComponent(item.slice("amc_session=".length)) } catch (err) { return "" }
-}
-
-function setCookie(token) {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
-  return "amc_session=" + encodeURIComponent(token) + "; HttpOnly; SameSite=Lax; Path=/; Max-Age=43200" + secure
-}
-
-function clearCookie() {
-  const secure = process.env.NODE_ENV === "production" ? "; Secure" : ""
-  return "amc_session=; HttpOnly; SameSite=Lax; Path=/; Max-Age=0" + secure
-}
-
-function reply(body, status, cookie) {
+function json(body, status, cookie) {
   const res = NextResponse.json(body, { status })
-  res.headers.set("Cache-Control", "no-store")
-  if (cookie) res.headers.set("Set-Cookie", cookie)
+  res.headers.set('Cache-Control', 'no-store')
+  res.headers.set('X-Content-Type-Options', 'nosniff')
+  if (cookie) res.headers.set('Set-Cookie', cookie)
   return res
 }
 
-export async function GET(req) {
-  const data = readToken(cookieValue(req))
-  if (!data) return reply({ message: "Connexion requise." }, 401)
-  return reply({ email: data.email, name: data.name, role: data.role, pages: data.pages }, 200)
+export async function GET(request) {
+  const session = auth.readSession(asReq(request))
+  if (!session) return json({ message: 'Connexion requise.' }, 401)
+  return json({
+    email: session.email,
+    name: session.name || '',
+    role: session.role,
+    pages: session.pages || [],
+    items: session.items || null
+  }, 200)
 }
 
-export async function DELETE() {
-  return reply({ ok: true }, 200, clearCookie())
+export async function DELETE(request) {
+  return json({ ok: true }, 200, auth.clearCookie(asReq(request)))
 }
 
-export async function POST(req) {
+export async function POST(request) {
   let body = {}
-  try { body = await req.json() } catch (err) { body = {} }
-  const email = String(body.email || "").trim().toLowerCase()
-  const password = String(body.password || "")
-  const person = PEOPLE.find((p) => p.email === email)
-  if (!person || !checkPassword(password, person.hash)) {
-    return reply({ message: "Accès refusé." }, 401)
+  try { body = await request.json() } catch (err) { body = {} }
+  const email = String((body && body.email) || '').trim().toLowerCase()
+  const password = String((body && body.password) || '')
+  const ip = String(request.headers.get('x-forwarded-for') || '').split(',')[0].trim()
+  const key = email + '|' + ip
+  if (rowOf(key).n >= 8) return json({ message: 'Trop d’essais. Réessayez dans un quart d’heure.' }, 429)
+  const result = await auth.checkLogin(email, password)
+  if (!result.ok) {
+    rowOf(key).n += 1
+    if (result.code === 'unconfigured' && result.role === 'admin') {
+      return json({ message: 'L’accès admin n’est pas activé. Dans Vercel, définissez AMC_ADMIN_PASSWORD (8 caractères minimum) et AMC_SESSION_SECRET, puis redéployez.' }, 503)
+    }
+    if (result.code === 'unconfigured') return json({ message: 'Le mot de passe de ce membre n’est pas encore défini.' }, 503)
+    const message = result.code === 'password' ? 'Mot de passe incorrect.' : 'Cette adresse n’a pas accès à l’espace AMC.'
+    return json({ message }, 401)
   }
-  const role = person.role
-  const data = { email, name: person.name, role, pages: pagesFor(role), exp: Date.now() + 12 * 60 * 60 * 1000 }
-  return reply({ email, name: person.name, role, pages: data.pages }, 200, setCookie(sign(data)))
+  if (!auth.secret()) {
+    return json({ message: 'La session n’est pas activée. Dans Vercel, définissez AMC_SESSION_SECRET (16 caractères minimum), puis redéployez.' }, 503)
+  }
+  const token = auth.signSession(result.email, result.role, result.name, result.pages)
+  if (!token) return json({ message: 'La session n’est pas activée. Dans Vercel, définissez AMC_SESSION_SECRET (16 caractères minimum), puis redéployez.' }, 503)
+  return json({
+    email: result.email,
+    name: result.name || '',
+    role: result.role,
+    pages: result.pages || [],
+    items: result.items || null
+  }, 200, auth.cookieHeader(token, asReq(request)))
 }

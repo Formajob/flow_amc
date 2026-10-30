@@ -33,6 +33,27 @@ const ITEMS = {
   argent: ["Dons", "MAD", true, 10]
 }
 
+const ITEM_SCOPE = {
+  "mohamedyahyajbir@gmail.com": { deny: ["livres"] },
+  "marouaabid1607@gmail.com": { allow: ["livres"] }
+}
+
+function itemAllowed(email, item) {
+  const scope = ITEM_SCOPE[String(email || "").toLowerCase()]
+  if (!scope) return true
+  if (scope.allow) return scope.allow.indexOf(item) >= 0
+  if (scope.deny) return scope.deny.indexOf(item) < 0
+  return true
+}
+
+async function storedItem(id) {
+  const found = await sb("/rest/v1/amc_entries?id=eq." + id + "&campaign_id=eq." + CAMPAIGN + "&select=item_id")
+  if (!found.ok) return { error: dbMessage(found) }
+  const row = Array.isArray(found.data) ? found.data[0] : null
+  if (!row) return { missing: true }
+  return { item: row.item_id }
+}
+
 function secret() {
   const value = String(process.env.AMC_SESSION_SECRET || "")
   return value.length >= 16 ? value : "amc-localhost-session-2026"
@@ -235,7 +256,7 @@ export async function GET(req) {
   if (!session) return reply({ message: "Connexion requise." }, 401)
   const found = await sb("/rest/v1/amc_entries?campaign_id=eq." + CAMPAIGN + "&select=id,group_id,member_id,item_id,qty,author,note,created_at&order=created_at.desc&limit=500")
   if (!found.ok) return reply({ message: dbMessage(found) }, found.status === 503 ? 503 : 502)
-  const rows = Array.isArray(found.data) ? found.data : []
+  const rows = (Array.isArray(found.data) ? found.data : []).filter((row) => itemAllowed(session.email, row.item_id))
   return reply({ entries: rows.map(front) }, 200)
 }
 
@@ -247,6 +268,7 @@ export async function POST(req) {
   try { body = await req.json() } catch (err) { body = {} }
   const line = checkLine(body)
   if (line.error) return reply({ message: line.error }, 400)
+  if (!itemAllowed(session.email, line.item_id)) return reply({ message: "Cet article n'est pas ouvert pour cette session." }, 403)
   line.author = session.name || session.email || "Saisie"
   const ready = await ensure(line)
   if (!ready.ok) return reply({ message: dbMessage(ready) }, 502)
@@ -266,6 +288,10 @@ export async function PATCH(req) {
   if (!id) return reply({ message: "Saisie introuvable." }, 400)
   const line = checkLine(body)
   if (line.error) return reply({ message: line.error }, 400)
+  const current = await storedItem(id)
+  if (current.error) return reply({ message: current.error }, 502)
+  if (current.missing) return reply({ message: "Saisie introuvable." }, 404)
+  if (!itemAllowed(session.email, current.item) || !itemAllowed(session.email, line.item_id)) return reply({ message: "Cet article n'est pas ouvert pour cette session." }, 403)
   const ready = await ensure(line)
   if (!ready.ok) return reply({ message: dbMessage(ready) }, 502)
   const saved = await sb("/rest/v1/amc_entries?id=eq." + id + "&campaign_id=eq." + CAMPAIGN, { method: "PATCH", body: line })
@@ -279,6 +305,10 @@ export async function DELETE(req) {
   if (!canWrite(session.role)) return reply({ message: "Cette session ne peut pas supprimer." }, 403)
   const id = Number(new URL(req.url).searchParams.get("id"))
   if (!id) return reply({ message: "Saisie introuvable." }, 400)
+  const current = await storedItem(id)
+  if (current.error) return reply({ message: current.error }, 502)
+  if (current.missing) return reply({ message: "Saisie introuvable." }, 404)
+  if (!itemAllowed(session.email, current.item)) return reply({ message: "Cet article n'est pas ouvert pour cette session." }, 403)
   const saved = await sb("/rest/v1/amc_entries?id=eq." + id + "&campaign_id=eq." + CAMPAIGN, { method: "DELETE", prefer: "return=minimal" })
   if (!saved.ok) return reply({ message: dbMessage(saved) }, 502)
   return reply({ ok: true }, 200)

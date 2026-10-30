@@ -469,6 +469,22 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     { id: 'livres', label: 'Livres' },
     { id: 'argent', label: 'Dons', money: true }
   ];
+  const ITEM_SCOPE = {
+    'mohamedyahyajbir@gmail.com': { deny: ['livres'] },
+    'marouaabid1607@gmail.com': { allow: ['livres'] }
+  };
+  function visibleItems() {
+    const email = String((session && session.email) || '').toLowerCase();
+    if (session && Array.isArray(session.items)) return ITEMS.filter((it) => session.items.indexOf(it.id) >= 0);
+    const scope = ITEM_SCOPE[email];
+    if (!scope) return ITEMS;
+    if (scope.allow) return ITEMS.filter((it) => scope.allow.indexOf(it.id) >= 0);
+    if (scope.deny) return ITEMS.filter((it) => scope.deny.indexOf(it.id) < 0);
+    return ITEMS;
+  }
+  function itemAllowed(id) {
+    return visibleItems().some((it) => it.id === id);
+  }
   const GROUPS = [
     { id: 'A', label: 'Groupe A', color: '#0b1330', members: [['safaa', 'Safaa'], ['yahya', 'Yahya'], ['nour', 'Nour'], ['fatiha', 'Fatiha'], ['badr', 'Badr'], ['nadia', 'Nadia']] },
     { id: 'B', label: 'Groupe B', color: '#0aa8bd', members: [['zineb', 'Zineb'], ['hamza', 'Hamza'], ['aicha', 'Aicha'], ['yusur', 'Yusur'], ['salma', 'Salma'], ['moncef', 'Moncef']] },
@@ -740,7 +756,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   function finish(next) {
     const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
     const pages = cleanRole === 'saisie' ? ['collecte.html', 'communiques.html'] : null;
-    session = { email: next.email, name: next.name || '', role: cleanRole, pages: pages };
+    session = { email: String(next.email || '').toLowerCase(), name: next.name || '', role: cleanRole, pages: pages, items: Array.isArray(next.items) ? next.items : null };
     const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     if (pages && pages.indexOf(here) === -1) {
       location.replace('collecte.html');
@@ -878,7 +894,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
     addNotice, removeNotice, role, profile, onReady, when, refresh,
-    memberName, itemOf, fmt, esc, pts, pct, daysLeft
+    memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
 })();

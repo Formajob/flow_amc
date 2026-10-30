@@ -470,7 +470,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     </section>
     <section class="card">
       <h2>Score du moment</h2>
-      <p class="sub">Lu dans la base, pas sur cet appareil.</p>
+      <p class="sub" id="live-note">Lu dans la base, pas sur cet appareil.</p>
       <div id="live"></div>
     </section>
   </div>
@@ -508,6 +508,22 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     { id: 'livres', label: 'Livres' },
     { id: 'argent', label: 'Dons', money: true }
   ];
+  const ITEM_SCOPE = {
+    'mohamedyahyajbir@gmail.com': { deny: ['livres'] },
+    'marouaabid1607@gmail.com': { allow: ['livres'] }
+  };
+  function visibleItems() {
+    const email = String((session && session.email) || '').toLowerCase();
+    if (session && Array.isArray(session.items)) return ITEMS.filter((it) => session.items.indexOf(it.id) >= 0);
+    const scope = ITEM_SCOPE[email];
+    if (!scope) return ITEMS;
+    if (scope.allow) return ITEMS.filter((it) => scope.allow.indexOf(it.id) >= 0);
+    if (scope.deny) return ITEMS.filter((it) => scope.deny.indexOf(it.id) < 0);
+    return ITEMS;
+  }
+  function itemAllowed(id) {
+    return visibleItems().some((it) => it.id === id);
+  }
   const GROUPS = [
     { id: 'A', label: 'Groupe A', color: '#0b1330', members: [['safaa', 'Safaa'], ['yahya', 'Yahya'], ['nour', 'Nour'], ['fatiha', 'Fatiha'], ['badr', 'Badr'], ['nadia', 'Nadia']] },
     { id: 'B', label: 'Groupe B', color: '#0aa8bd', members: [['zineb', 'Zineb'], ['hamza', 'Hamza'], ['aicha', 'Aicha'], ['yusur', 'Yusur'], ['salma', 'Salma'], ['moncef', 'Moncef']] },
@@ -779,7 +795,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   function finish(next) {
     const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
     const pages = cleanRole === 'saisie' ? ['collecte.html', 'communiques.html'] : null;
-    session = { email: next.email, name: next.name || '', role: cleanRole, pages: pages };
+    session = { email: String(next.email || '').toLowerCase(), name: next.name || '', role: cleanRole, pages: pages, items: Array.isArray(next.items) ? next.items : null };
     const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     if (pages && pages.indexOf(here) === -1) {
       location.replace('collecte.html');
@@ -917,7 +933,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
     addNotice, removeNotice, role, profile, onReady, when, refresh,
-    memberName, itemOf, fmt, esc, pts, pct, daysLeft
+    memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
 })();
@@ -931,7 +947,7 @@ function fillMembers() {
 }
 function fillFilters() {
   document.getElementById('filter-group').innerHTML = '<option value="">Tous les groupes</option>' + AMC.GROUPS.map((g) => '<option value="' + g.id + '">' + g.label + '</option>').join('');
-  document.getElementById('filter-item').innerHTML = '<option value="">Tous les articles</option>' + AMC.ITEMS.map((it) => '<option value="' + it.id + '">' + it.label + '</option>').join('');
+  document.getElementById('filter-item').innerHTML = '<option value="">Tous les articles</option>' + AMC.visibleItems().map((it) => '<option value="' + it.id + '">' + it.label + '</option>').join('');
   fillFilterMembers();
 }
 function fillFilterMembers() {
@@ -955,6 +971,7 @@ function filtered() {
   const fm = document.getElementById('filter-member').value;
   const fi = document.getElementById('filter-item').value;
   return rows.filter((e) => {
+    if (!AMC.itemAllowed(e.item)) return false;
     if (fg && e.group !== fg) return false;
     if (fi && e.item !== fi) return false;
     if (fm && fm !== e.group + ':' + e.member) return false;
@@ -966,7 +983,12 @@ function filtered() {
 }
 function render() {
   const s = AMC.load();
-  const st = AMC.stats(s);
+  const allowed = {};
+  AMC.visibleItems().forEach((it) => { allowed[it.id] = true; });
+  const view = Object.assign({}, s, { entries: (s.entries || []).filter((e) => allowed[e.item]) });
+  const st = AMC.stats(view);
+  const note = document.getElementById('live-note');
+  if (note) note.textContent = AMC.visibleItems().length === AMC.ITEMS.length ? 'Lu dans la base, pas sur cet appareil.' : 'Lu dans la base, sur les articles ouverts pour cette session.';
   const share = Math.max(1, AMC.GROUPS.length);
   document.getElementById('live').innerHTML = st.ranked.map((g) => {
     const p = AMC.pct(g.pieces, Math.round(st.pieceTarget / share));
@@ -999,7 +1021,7 @@ async function send(method, body, id) {
   return data;
 }
 document.getElementById('group').innerHTML = AMC.GROUPS.map((g) => '<option value="' + g.id + '">' + g.label + '</option>').join('');
-document.getElementById('item').innerHTML = AMC.ITEMS.map((it) => '<option value="' + it.id + '">' + it.label + '</option>').join('');
+document.getElementById('item').innerHTML = AMC.visibleItems().map((it) => '<option value="' + it.id + '">' + it.label + '</option>').join('');
 document.getElementById('group').onchange = fillMembers;
 fillMembers();
 fillFilters();
@@ -1019,6 +1041,10 @@ document.getElementById('form').onsubmit = async (e) => {
     qty: document.getElementById('qty').value,
     note: document.getElementById('note').value
   };
+  if (!AMC.itemAllowed(payload.item)) {
+    document.getElementById('msg').textContent = 'Cet article n’est pas ouvert pour cette session.';
+    return;
+  }
   const id = document.getElementById('edit-id').value;
   document.getElementById('save').disabled = true;
   try {
