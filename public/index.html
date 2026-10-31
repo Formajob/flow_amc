@@ -417,6 +417,9 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   .extracts { flex-wrap: wrap; }
 }
 
+.admin-only { display: none; }
+body.role-admin .admin-only { display: block; }
+
   </style>
 </head>
 <body>
@@ -862,6 +865,18 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
       }
     });
   }
+  async function refreshMembers() {
+    try {
+      const res = await fetch('/api/members', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      (data.members || []).forEach((m) => {
+        const g = GROUPS.find((x) => x.id === m.group);
+        if (!g || g.members.some((row) => row[0] === m.id)) return;
+        g.members.push([m.id, m.name]);
+      });
+    } catch (err) { /* liste locale */ }
+  }
   async function refresh() {
     try {
       const res = await fetch('/api/entries', { credentials: 'same-origin' });
@@ -891,6 +906,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
         const data = await res.json();
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
           await refresh();
+          await refreshMembers();
           finish(data);
           return;
         }
@@ -901,7 +917,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();

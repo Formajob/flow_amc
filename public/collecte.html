@@ -417,6 +417,9 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   .extracts { flex-wrap: wrap; }
 }
 
+.admin-only { display: none; }
+body.role-admin .admin-only { display: block; }
+
   </style>
 </head>
 <body>
@@ -466,6 +469,16 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
           <button class="ghost" type="button" id="cancel" hidden>Annuler</button>
         </div>
         <p class="note" id="msg"></p>
+      </form>
+      <form class="form admin-only" id="name-form" style="margin-top:18px">
+        <h2>Ajouter un nom</h2>
+        <p class="sub">Réservé aux deux admins. Le nom apparaît ensuite dans ce groupe, pour toute l'équipe.</p>
+        <div class="split">
+          <label>Groupe<select id="name-group"></select></label>
+          <label>Nom<input id="name-input" maxlength="60" required placeholder="Exemple : Ali Bousfiha"></label>
+        </div>
+        <button class="btn" type="submit">Ajouter au groupe</button>
+        <p class="note" id="name-msg"></p>
       </form>
     </section>
     <section class="card">
@@ -893,6 +906,18 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
       }
     });
   }
+  async function refreshMembers() {
+    try {
+      const res = await fetch('/api/members', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      (data.members || []).forEach((m) => {
+        const g = GROUPS.find((x) => x.id === m.group);
+        if (!g || g.members.some((row) => row[0] === m.id)) return;
+        g.members.push([m.id, m.name]);
+      });
+    } catch (err) { /* liste locale */ }
+  }
   async function refresh() {
     try {
       const res = await fetch('/api/entries', { credentials: 'same-origin' });
@@ -922,6 +947,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
         const data = await res.json();
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
           await refresh();
+          await refreshMembers();
           finish(data);
           return;
         }
@@ -932,7 +958,7 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
@@ -1021,7 +1047,27 @@ async function send(method, body, id) {
   return data;
 }
 document.getElementById('group').innerHTML = AMC.GROUPS.map((g) => '<option value="' + g.id + '">' + g.label + '</option>').join('');
+document.getElementById('name-group').innerHTML = document.getElementById('group').innerHTML;
 document.getElementById('item').innerHTML = AMC.visibleItems().map((it) => '<option value="' + it.id + '">' + it.label + '</option>').join('');
+AMC.refreshMembers().then(() => { fillMembers(); fillFilters(); });
+document.getElementById('name-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('name-msg');
+  msg.textContent = 'Enregistrement…';
+  const res = await fetch('/api/members', {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ group: document.getElementById('name-group').value, name: document.getElementById('name-input').value })
+  });
+  const data = await res.json().catch(() => ({}));
+  msg.textContent = data.message || 'Ajout impossible.';
+  if (!res.ok) return;
+  document.getElementById('name-input').value = '';
+  await AMC.refreshMembers();
+  fillMembers();
+  fillFilters();
+};
 document.getElementById('group').onchange = fillMembers;
 fillMembers();
 fillFilters();

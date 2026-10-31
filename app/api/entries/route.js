@@ -192,7 +192,8 @@ function checkLine(body) {
   const item = String(body.item || "").trim()
   const qty = Number(String(body.qty || "").replace(",", "."))
   const note = String(body.note || "").slice(0, 240)
-  if (!GROUPS[group] || GROUPS[group].indexOf(member) < 0) return { error: "Groupe ou membre inconnu." }
+  if (!GROUPS[group]) return { error: "Groupe inconnu." }
+  if (!/^[a-z0-9_]{2,40}$/.test(member)) return { error: "Ce nom n'est pas dans ce groupe." }
   if (!ITEMS[item]) return { error: "Article inconnu." }
   if (!qty || Number.isNaN(qty)) return { error: "La quantité ne peut pas être 0." }
   return {
@@ -203,6 +204,14 @@ function checkLine(body) {
     qty,
     note: note || null
   }
+}
+
+async function memberAllowed(line) {
+  const group = line.group_id.slice(CAMPAIGN.length + 1)
+  const member = line.member_id.slice(group.length + 1)
+  if (GROUPS[group] && GROUPS[group].indexOf(member) >= 0) return true
+  const found = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(group + "-" + member) + "&select=id")
+  return found.ok && Array.isArray(found.data) && found.data.length > 0
 }
 
 async function ensure(line) {
@@ -268,6 +277,7 @@ export async function POST(req) {
   try { body = await req.json() } catch (err) { body = {} }
   const line = checkLine(body)
   if (line.error) return reply({ message: line.error }, 400)
+  if (!(await memberAllowed(line))) return reply({ message: "Ce nom n'est pas dans ce groupe." }, 400)
   if (!itemAllowed(session.email, line.item_id)) return reply({ message: "Cet article n'est pas ouvert pour cette session." }, 403)
   line.author = session.name || session.email || "Saisie"
   const ready = await ensure(line)
@@ -288,6 +298,7 @@ export async function PATCH(req) {
   if (!id) return reply({ message: "Saisie introuvable." }, 400)
   const line = checkLine(body)
   if (line.error) return reply({ message: line.error }, 400)
+  if (!(await memberAllowed(line))) return reply({ message: "Ce nom n'est pas dans ce groupe." }, 400)
   const current = await storedItem(id)
   if (current.error) return reply({ message: current.error }, 502)
   if (current.missing) return reply({ message: "Saisie introuvable." }, 404)
