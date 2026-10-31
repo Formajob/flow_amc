@@ -209,9 +209,9 @@ function checkLine(body) {
 async function memberAllowed(line) {
   const group = line.group_id.slice(CAMPAIGN.length + 1)
   const member = line.member_id.slice(group.length + 1)
-  if (GROUPS[group] && GROUPS[group].indexOf(member) >= 0) return true
   const found = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(group + "-" + member) + "&select=id")
-  return found.ok && Array.isArray(found.data) && found.data.length > 0
+  if (found.ok) return Array.isArray(found.data) && found.data.length > 0
+  return Boolean(GROUPS[group] && GROUPS[group].indexOf(member) >= 0)
 }
 
 async function ensure(line) {

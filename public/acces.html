@@ -420,6 +420,11 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
 .admin-only { display: none; }
 body.role-admin .admin-only { display: block; }
 
+body:not(.role-admin) a[href="administration.html"] { display: none !important; }
+.admin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-actions select { min-width: 128px; }
+.btn-danger { color: #9b2335; }
+
   </style>
 </head>
 <body>
@@ -864,11 +869,10 @@ body.role-admin .admin-only { display: block; }
       const res = await fetch('/api/members', { credentials: 'same-origin' });
       if (!res.ok) return;
       const data = await res.json();
-      (data.members || []).forEach((m) => {
-        const g = GROUPS.find((x) => x.id === m.group);
-        if (!g || g.members.some((row) => row[0] === m.id)) return;
-        g.members.push([m.id, m.name]);
-      });
+      if (!Array.isArray(data.members)) return;
+      const by = { A: [], B: [], C: [], D: [], E: [] };
+      data.members.forEach((m) => { if (by[m.group]) by[m.group].push([m.id, m.name]); });
+      GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
   async function refresh() {

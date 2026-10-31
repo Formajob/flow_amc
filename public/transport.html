@@ -420,6 +420,11 @@ body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
 .admin-only { display: none; }
 body.role-admin .admin-only { display: block; }
 
+body:not(.role-admin) a[href="administration.html"] { display: none !important; }
+.admin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-actions select { min-width: 128px; }
+.btn-danger { color: #9b2335; }
+
   </style>
 </head>
 <body>
@@ -435,6 +440,7 @@ body.role-admin .admin-only { display: block; }
       </div>
       <a href="classement.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h8v6a4 4 0 0 1-8 0z"/><path d="M15 6h3a2 2 0 0 1 0 4h-3"/><path d="M8 20h8"/><path d="M12 14v6"/></svg></span>Classement</a>
       <a href="communiques.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h14v9H8l-3 3z"/></svg></span>Communiqués</a>
+      <a href="administration.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.2-3 3.4-4.5 7-4.5s5.8 1.5 7 4.5"/></svg></span>Administration</a>
     </nav>
     <div class="role" aria-label="Session">
       <span class="session-who" data-who></span>
@@ -877,11 +883,10 @@ body.role-admin .admin-only { display: block; }
       const res = await fetch('/api/members', { credentials: 'same-origin' });
       if (!res.ok) return;
       const data = await res.json();
-      (data.members || []).forEach((m) => {
-        const g = GROUPS.find((x) => x.id === m.group);
-        if (!g || g.members.some((row) => row[0] === m.id)) return;
-        g.members.push([m.id, m.name]);
-      });
+      if (!Array.isArray(data.members)) return;
+      const by = { A: [], B: [], C: [], D: [], E: [] };
+      data.members.forEach((m) => { if (by[m.group]) by[m.group].push([m.id, m.name]); });
+      GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
   async function refresh() {

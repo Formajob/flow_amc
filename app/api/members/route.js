@@ -6,6 +6,36 @@ export const dynamic = "force-dynamic"
 
 const CAMPAIGN = "caravane-11"
 const GROUPS = ["A", "B", "C", "D", "E"]
+const SEED = [
+  ["A", "safaa", "Safaa"],
+  ["A", "yahya", "Yahya"],
+  ["A", "nour", "Nour"],
+  ["A", "fatiha", "Fatiha"],
+  ["A", "badr", "Badr"],
+  ["A", "nadia", "Nadia"],
+  ["B", "zineb", "Zineb"],
+  ["B", "hamza", "Hamza"],
+  ["B", "aicha", "Aicha"],
+  ["B", "yusur", "Yusur"],
+  ["B", "salma", "Salma"],
+  ["B", "moncef", "Moncef"],
+  ["C", "yassir", "Yassir"],
+  ["C", "bouchra", "Bouchra"],
+  ["C", "zakaria", "Zakaria"],
+  ["C", "mouhcine", "Mouhcine"],
+  ["C", "maroua", "Maroua"],
+  ["C", "wissal", "Wissal"],
+  ["D", "bouchra", "Bouchra"],
+  ["D", "hasnaa", "Hasnaa"],
+  ["D", "ilyass", "Ilyass"],
+  ["D", "mohamed", "Mohamed"],
+  ["D", "ahmed", "Ahmed"],
+  ["D", "malak", "Malak"],
+  ["E", "ashraf", "Ashraf"],
+  ["E", "chaymaa", "Chaymaa"],
+  ["E", "salma_harama", "Salma Harama"],
+  ["E", "ali_bousfiha", "Ali Bousfiha"]
+]
 
 function secret() {
   const value = String(process.env.AMC_SESSION_SECRET || "")
@@ -78,8 +108,7 @@ async function sb(path, options) {
 }
 
 function slug(name) {
-  const folded = String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
-  return folded.replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40)
+  return String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40)
 }
 
 function front(row) {
@@ -87,34 +116,19 @@ function front(row) {
   const id = String(row.id || "")
   const prefix = group + "-"
   return {
+    key: id,
     group,
     id: id.indexOf(prefix) === 0 ? id.slice(prefix.length) : id,
     name: row.name
   }
 }
 
-export async function GET(req) {
-  const session = sessionOf(req)
-  if (!session) return reply({ message: "Connexion requise." }, 401)
-  const found = await sb("/rest/v1/amc_members?group_id=like." + CAMPAIGN + "-*&select=id,group_id,name,sort_order&order=sort_order.asc")
-  if (!found.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
-  const rows = Array.isArray(found.data) ? found.data.map(front) : []
-  return reply({ members: rows }, 200)
+function visible(row) {
+  const group = String(row.group_id || "").replace(CAMPAIGN + "-", "")
+  return GROUPS.indexOf(group) >= 0 && String(row.id || "").indexOf("X-") !== 0
 }
 
-export async function POST(req) {
-  const session = sessionOf(req)
-  if (!session) return reply({ message: "Connexion requise." }, 401)
-  if (session.role !== "admin") return reply({ message: "Seuls les admins ajoutent un nom." }, 403)
-  let body = {}
-  try { body = await req.json() } catch (err) { body = {} }
-  const group = String(body.group || "").trim().toUpperCase()
-  const name = String(body.name || "").trim().replace(/\s+/g, " ")
-  const id = slug(name)
-  if (GROUPS.indexOf(group) < 0) return reply({ message: "Choisissez un groupe." }, 400)
-  if (name.length < 2 || name.length > 60 || id.length < 2) return reply({ message: "Indiquez le nom complet." }, 400)
-  const groupId = CAMPAIGN + "-" + group
-  const memberId = group + "-" + id
+async function ensureGroups() {
   const campaign = await sb("/rest/v1/amc_campaigns?on_conflict=id", {
     method: "POST",
     prefer: "resolution=ignore-duplicates,return=minimal",
@@ -129,23 +143,173 @@ export async function POST(req) {
       status: "collecte"
     }
   })
-  if (!campaign.ok) return reply({ message: "Le groupe n'a pas pu être préparé." }, 502)
-  const savedGroup = await sb("/rest/v1/amc_groups?on_conflict=id", {
+  if (!campaign.ok) return campaign
+  return sb("/rest/v1/amc_groups?on_conflict=id", {
     method: "POST",
     prefer: "resolution=ignore-duplicates,return=minimal",
-    body: { id: groupId, campaign_id: CAMPAIGN, code: group, label: "Groupe " + group }
+    body: GROUPS.concat(["X"]).map((code) => ({
+      id: CAMPAIGN + "-" + code,
+      campaign_id: CAMPAIGN,
+      code,
+      label: code === "X" ? "Retirés" : "Groupe " + code
+    }))
   })
-  if (!savedGroup.ok) return reply({ message: "Le groupe n'a pas pu être préparé." }, 502)
+}
+
+async function loadRows() {
+  return sb("/rest/v1/amc_members?group_id=like." + CAMPAIGN + "-*&select=id,group_id,name,sort_order&order=sort_order.asc")
+}
+
+async function seedMissing(rows) {
+  const ids = new Set((rows || []).map((row) => row.id))
+  for (let i = 0; i < SEED.length; i += 1) {
+    const group = SEED[i][0]
+    const id = group + "-" + SEED[i][1]
+    if (ids.has(id) || ids.has("X-" + id)) continue
+    const saved = await sb("/rest/v1/amc_members", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: { id, group_id: CAMPAIGN + "-" + group, name: SEED[i][2], sort_order: i + 1 }
+    })
+    if (saved.ok) ids.add(id)
+  }
+}
+
+async function tombstone(memberId) {
+  await sb("/rest/v1/amc_members?on_conflict=id", {
+    method: "POST",
+    prefer: "resolution=ignore-duplicates,return=minimal",
+    body: { id: "X-" + memberId, group_id: CAMPAIGN + "-X", name: "retiré", sort_order: 0 }
+  })
+}
+
+async function clearTombstone(memberId) {
+  await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent("X-" + memberId), {
+    method: "DELETE",
+    prefer: "return=minimal"
+  })
+}
+
+function admin(req) {
+  const session = sessionOf(req)
+  if (!session) return { error: reply({ message: "Connexion requise." }, 401) }
+  if (session.role !== "admin") return { error: reply({ message: "Seuls les admins gèrent les noms." }, 403) }
+  return { session }
+}
+
+export async function GET(req) {
+  const session = sessionOf(req)
+  if (!session) return reply({ message: "Connexion requise." }, 401)
+  const ready = await ensureGroups()
+  if (!ready || !ready.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
+  const found = await loadRows()
+  if (!found.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
+  await seedMissing(Array.isArray(found.data) ? found.data : [])
+  const again = await loadRows()
+  if (!again.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
+  const members = (Array.isArray(again.data) ? again.data : []).filter(visible).map(front)
+  members.sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name, "fr"))
+  return reply({ members }, 200)
+}
+
+export async function POST(req) {
+  const gate = admin(req)
+  if (gate.error) return gate.error
+  let body = {}
+  try { body = await req.json() } catch (err) { body = {} }
+  const group = String(body.group || "").trim().toUpperCase()
+  const name = String(body.name || "").trim().replace(/\s+/g, " ")
+  const id = slug(name)
+  if (GROUPS.indexOf(group) < 0) return reply({ message: "Choisissez un groupe." }, 400)
+  if (name.length < 2 || name.length > 60 || id.length < 2) return reply({ message: "Indiquez le nom complet." }, 400)
+  const memberId = group + "-" + id
+  const ready = await ensureGroups()
+  if (!ready || !ready.ok) return reply({ message: "Le groupe n'a pas pu être préparé." }, 502)
   const existing = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(memberId) + "&select=id,name")
   if (existing.ok && Array.isArray(existing.data) && existing.data[0]) {
     return reply({ message: existing.data[0].name + " est déjà dans le groupe " + group + "." }, 409)
   }
-  const listed = await sb("/rest/v1/amc_members?group_id=eq." + encodeURIComponent(groupId) + "&select=id")
+  await clearTombstone(memberId)
+  const listed = await sb("/rest/v1/amc_members?group_id=eq." + encodeURIComponent(CAMPAIGN + "-" + group) + "&select=id")
   const sort = (listed.ok && Array.isArray(listed.data) ? listed.data.length : 0) + 1
   const saved = await sb("/rest/v1/amc_members", {
     method: "POST",
-    body: { id: memberId, group_id: groupId, name, sort_order: sort }
+    body: { id: memberId, group_id: CAMPAIGN + "-" + group, name, sort_order: sort }
   })
   if (!saved.ok) return reply({ message: "Le nom n'a pas été enregistré." }, 502)
-  return reply({ message: name + " est ajouté au groupe " + group + ".", member: { group, id, name } }, 200)
+  return reply({ message: name + " est ajouté au groupe " + group + ".", member: { key: memberId, group, id, name } }, 200)
+}
+
+export async function PATCH(req) {
+  const gate = admin(req)
+  if (gate.error) return gate.error
+  let body = {}
+  try { body = await req.json() } catch (err) { body = {} }
+  const oldId = String(body.id || "").trim()
+  const group = String(body.group || "").trim().toUpperCase()
+  if (!/^[A-E]-[a-z0-9_]{2,40}$/.test(oldId) || GROUPS.indexOf(group) < 0) return reply({ message: "Choisissez un nom et un groupe." }, 400)
+  const currentGroup = oldId.slice(0, 1)
+  const slugId = oldId.slice(2)
+  if (currentGroup === group) return reply({ message: "Ce nom est déjà dans ce groupe." }, 400)
+  const found = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(oldId) + "&select=id,name")
+  const row = found.ok && Array.isArray(found.data) ? found.data[0] : null
+  if (!row) return reply({ message: "Ce nom n'est plus dans la liste." }, 404)
+  const newId = group + "-" + slugId
+  const clash = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(newId) + "&select=id,name")
+  if (clash.ok && Array.isArray(clash.data) && clash.data[0]) {
+    return reply({ message: "Un nom identique est déjà dans le groupe " + group + "." }, 409)
+  }
+  const ready = await ensureGroups()
+  if (!ready || !ready.ok) return reply({ message: "Le groupe n'a pas pu être préparé." }, 502)
+  await clearTombstone(newId)
+  const created = await sb("/rest/v1/amc_members", {
+    method: "POST",
+    body: { id: newId, group_id: CAMPAIGN + "-" + group, name: row.name, sort_order: 99 }
+  })
+  if (!created.ok) return reply({ message: "Le groupe n'a pas été changé." }, 502)
+  const moved = await sb("/rest/v1/amc_entries?member_id=eq." + encodeURIComponent(oldId), {
+    method: "PATCH",
+    prefer: "return=minimal",
+    body: { member_id: newId, group_id: CAMPAIGN + "-" + group }
+  })
+  if (!moved.ok) return reply({ message: "Les saisies n'ont pas suivi le changement de groupe." }, 502)
+  const removed = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(oldId), {
+    method: "DELETE",
+    prefer: "return=minimal"
+  })
+  if (!removed.ok) return reply({ message: "L'ancien groupe n'a pas pu être quitté." }, 502)
+  await tombstone(oldId)
+  return reply({ message: row.name + " est maintenant dans le groupe " + group + ".", member: { key: newId, group, id: slugId, name: row.name } }, 200)
+}
+
+export async function DELETE(req) {
+  const gate = admin(req)
+  if (gate.error) return gate.error
+  const url = new URL(req.url)
+  const memberId = String(url.searchParams.get("id") || "").trim()
+  const force = url.searchParams.get("force") === "1"
+  if (!/^[A-E]-[a-z0-9_]{2,40}$/.test(memberId)) return reply({ message: "Choisissez un nom." }, 400)
+  const found = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(memberId) + "&select=id,name")
+  const row = found.ok && Array.isArray(found.data) ? found.data[0] : null
+  if (!row) return reply({ message: "Ce nom n'est plus dans la liste." }, 404)
+  const lines = await sb("/rest/v1/amc_entries?member_id=eq." + encodeURIComponent(memberId) + "&select=id")
+  const count = lines.ok && Array.isArray(lines.data) ? lines.data.length : 0
+  if (count && !force) {
+    const word = count > 1 ? "saisies" : "saisie"
+    return reply({ message: row.name + " a " + count + " " + word + ".", entries: count }, 409)
+  }
+  if (count) {
+    const cleared = await sb("/rest/v1/amc_entries?member_id=eq." + encodeURIComponent(memberId), {
+      method: "DELETE",
+      prefer: "return=minimal"
+    })
+    if (!cleared.ok) return reply({ message: "Les saisies de ce nom n'ont pas pu être retirées." }, 502)
+  }
+  const removed = await sb("/rest/v1/amc_members?id=eq." + encodeURIComponent(memberId), {
+    method: "DELETE",
+    prefer: "return=minimal"
+  })
+  if (!removed.ok) return reply({ message: "Le nom n'a pas été retiré." }, 502)
+  await tombstone(memberId)
+  return reply({ message: row.name + " est retiré." }, 200)
 }
