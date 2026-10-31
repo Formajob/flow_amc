@@ -10,14 +10,14 @@ const GROUPS = {
   B: ["zineb", "hamza", "aicha", "yusur", "salma", "moncef"],
   C: ["yassir", "bouchra", "zakaria", "mouhcine", "maroua", "wissal"],
   D: ["bouchra", "hasnaa", "ilyass", "mohamed", "ahmed", "malak"],
-  E: ["ashraf", "chaymaa"]
+  E: ["ashraf", "chaymaa", "salma_harama", "ali_bousfiha"]
 }
 const NAMES = {
   safaa: "Safaa", yahya: "Yahya", nour: "Nour", fatiha: "Fatiha", badr: "Badr", nadia: "Nadia",
   zineb: "Zineb", hamza: "Hamza", aicha: "Aicha", yusur: "Yusur", salma: "Salma", moncef: "Moncef",
   yassir: "Yassir", bouchra: "Bouchra", zakaria: "Zakaria", mouhcine: "Mouhcine", maroua: "Maroua", wissal: "Wissal",
   hasnaa: "Hasnaa", ilyass: "Ilyass", mohamed: "Mohamed", ahmed: "Ahmed", malak: "Malak",
-  ashraf: "Ashraf", chaymaa: "Chaymaa"
+  ashraf: "Ashraf", chaymaa: "Chaymaa", salma_harama: "Salma Harama", ali_bousfiha: "Ali Bousfiha"
 }
 const ITEMS = {
   pantalons: ["Pantalons", "pièce", false, 1],
