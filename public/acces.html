@@ -515,13 +515,13 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
     return m ? m[1] : '—';
   }
   function itemOf(id) { return ITEMS.find((x) => x.id === id); }
-  function fmt(n) { return new Intl.NumberFormat('fr-FR').format(Math.round(Number(n) || 0)); }
+  function fmt(n) { return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(Number(n) || 0); }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
   function pts(row, money) {
-    if (row && typeof row === "object") {
-      return Math.floor((Number(row.clothes) || 0) / 10) + Math.floor((Number(row.books) || 0) / 5) + Math.floor((Number(row.money) || 0) / 50);
-    }
-    return Math.floor((Number(row) || 0) / 10) + Math.floor((Number(money) || 0) / 50);
+    const clothes = row && typeof row === "object" ? Number(row.clothes) || 0 : Number(row) || 0;
+    const books = row && typeof row === "object" ? Number(row.books) || 0 : 0;
+    const cash = row && typeof row === "object" ? Number(row.money) || 0 : Number(money) || 0;
+    return clothes / 10 + books / 5 + cash / 50;
   }
   function pct(n, d) { return d > 0 ? Math.max(0, Math.round((n / d) * 100)) : 0; }
   function daysLeft() {
