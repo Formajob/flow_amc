@@ -427,14 +427,58 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
 
 body:not(.role-admin) #save-prep { display: none !important; }
 
-.prep-note { width: 100%; min-width: 160px; }
+.prep-scroll { overflow: auto; }
+.prep-sheet { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.prep-sheet .c-article { width: 18%; }
+.prep-sheet .c-num { width: 11%; }
+.prep-sheet .c-edit { width: 15%; }
+.prep-sheet .c-note { width: 34%; }
+.prep-sheet th, .prep-sheet td { padding: 8px 8px; vertical-align: middle; }
+.prep-sheet thead th { padding-bottom: 10px; }
+.prep-sheet th.edit, .prep-sheet th.note { text-align: left; padding-left: 10px; padding-right: 10px; }
+.prep-sheet td.edit, .prep-sheet td.note { text-align: left; padding-left: 0; padding-right: 0; }
+.prep-sheet td.edit input, .prep-sheet td.note input { width: 100%; margin: 0; text-align: left; }
+.prep-sheet td.num, .prep-sheet th.num { text-align: right; padding-right: 10px; }
 #prep-report { display: none; }
+.report-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  background: #0b1330; color: #fff; border-radius: 18px; padding: 18px 22px;
+}
+.report-app { font-size: 28px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.report-banner small { display: block; margin-top: 6px; color: #9eb0c8; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.report-banner-side { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #f6dc8d; }
+.report-meta { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.report-rule { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.report-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0 14px; }
+.report-kpis div { background: #fff; border: 1px solid var(--filet); border-radius: 14px; padding: 12px 14px; }
+.report-kpis b { display: block; color: var(--navy); font-size: 22px; letter-spacing: -.03em; }
+.report-kpis span { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.report-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.report-table th { background: #0b1330; color: #fff; text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.report-table th.num, .report-table td.num { text-align: right; }
+.report-table th, .report-table td { padding: 8px 10px; border-bottom: 1px solid var(--filet); }
+.report-table tbody tr:nth-child(even) { background: #f6f7fb; }
+.report-total td { font-weight: 800; color: var(--navy); background: #fff6e0 !important; border-bottom: 0; }
+.prep-report h2 { margin: 18px 0 8px; color: var(--navy); font-size: 16px; }
+.report-gap { break-inside: avoid; border: 1px solid var(--filet); border-left: 4px solid #c9a227; border-radius: 12px; padding: 10px 12px; margin: 8px 0; background: #fff; }
+.report-gap b { color: var(--navy); }
+.report-gap span { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.report-gap p { margin: 6px 0 0; }
+.report-empty { color: var(--muted); }
 body.printing-report .side,
 body.printing-report .noprint,
 body.printing-report #prep-work { display: none !important; }
 body.printing-report #prep-report { display: block !important; }
-body.printing-report .prep-report h1 { margin-top: 0; }
-body.printing-report .prep-report table { width: 100%; }
+body.printing-report .main { padding: 0; }
+body.printing-report .prep-report,
+body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@page { margin: 12mm; }
+@media (max-width: 760px) {
+  .prep-sheet .c-article { width: 120px; }
+  .prep-sheet .c-note { width: 180px; }
+  .report-kpis { grid-template-columns: 1fr 1fr; }
+  .report-banner { display: grid; }
+}
 
   </style>
 </head>
@@ -459,28 +503,57 @@ body.printing-report .prep-report table { width: 100%; }
     </div>
     <div class="foot">Caravane humanitaire · 11e édition<br>Douar Ilissi · 26-27 déc. 2026</div>
   </aside><main class="main">
-  <div class="kicker"><i></i> Étape 2 · Préparation</div>
-  <h1>Tri et conditionnement</h1>
-  <p class="lead">Le réel est copié du déclaré. Saisissez seulement ce qui est à écarter, et la raison. L'écart se calcule seul.</p>
+  <div class="rank-head noprint">
+    <div>
+      <div class="kicker"><i></i> Étape 2 · Préparation</div>
+      <h1>Tri et conditionnement</h1>
+      <p class="lead">Le réel est copié du déclaré. Saisissez seulement ce qui est à écarter, et la raison. L'écart se calcule seul.</p>
+    </div>
+    <div class="extracts">
+      <button class="extract extract-report" type="button" id="print-prep">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
+        Rapport
+      </button>
+    </div>
+  </div>
   <section class="card" id="prep-work">
     <h2>Contrôle</h2>
     <p class="sub">Réel = Déclaré − À écarter. Écart = Déclaré − Réel. La raison explique l'écart.</p>
-    <div style="overflow:auto">
-      <table>
-        <thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="num">À écarter</th><th class="num">Écart</th><th>Raison</th></tr></thead>
+    <div class="prep-scroll">
+      <table class="prep-sheet">
+        <colgroup>
+          <col class="c-article">
+          <col class="c-num">
+          <col class="c-num">
+          <col class="c-edit">
+          <col class="c-num">
+          <col class="c-note">
+        </colgroup>
+        <thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="edit">À écarter</th><th class="num">Écart</th><th class="note">Raison</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
     <div class="row noprint" style="margin-top:14px">
       <button class="btn" type="button" id="save-prep">Enregistrer</button>
-      <button class="ghost" type="button" id="print-prep">Rapport</button>
     </div>
     <p class="note" id="prep-msg"></p>
   </section>
   <section id="prep-report" class="prep-report">
-    <div class="kicker"><i></i> Rapport de préparation</div>
-    <h1>Détail du tri</h1>
-    <p class="lead" id="report-meta"></p>
+    <header class="report-banner">
+      <div>
+        <div class="report-app">ACX Flow</div>
+        <small>By ACX Maroc</small>
+      </div>
+      <div class="report-banner-side">Rapport de préparation</div>
+    </header>
+    <section class="assoc">
+      <div class="brand-chip"><img src="logo.png" alt="ACX Flow"></div>
+      <div>
+        <b>Association Morocco's Creativity</b>
+        <div class="assoc-meta">Caravane humanitaire, 11e édition · Douar Ilissi, région d'Azilal<br>26 et 27 décembre 2026<br>support@acx.ma · flow.acx.ma · +212 634 232 006</div>
+      </div>
+    </section>
+    <p class="report-meta" id="report-meta"></p>
     <div id="report-body"></div>
   </section>
 </main></div>
@@ -999,7 +1072,7 @@ function render() {
   const s = AMC.load();
   document.getElementById('rows').innerHTML = rowsOf().map((row) => {
     const warn = row.over ? ' style="color:#9b2335"' : '';
-    return '<tr><td>' + row.label + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="num"><input data-prep="' + row.id + '" data-field="rejected" type="number" min="0" step="any" value="' + row.rejected + '"></td><td class="num"' + warn + '>' + AMC.fmt(row.gap) + '</td><td><input class="prep-note" data-prep="' + row.id + '" data-field="note" maxlength="240" placeholder="Raison de l’écart" value="' + AMC.esc(row.note) + '"></td></tr>';
+    return '<tr><td>' + row.label + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="edit"><input data-prep="' + row.id + '" data-field="rejected" type="number" min="0" step="any" value="' + row.rejected + '"></td><td class="num"' + warn + '>' + AMC.fmt(row.gap) + '</td><td class="note"><input class="prep-note" data-prep="' + row.id + '" data-field="note" maxlength="240" placeholder="Raison de l’écart" value="' + AMC.esc(row.note) + '"></td></tr>';
   }).join('');
   const msg = document.getElementById('prep-msg');
   if (msg && !msg.dataset.live) msg.textContent = s.prepUpdatedAt ? 'Dernier enregistrement : ' + AMC.when(s.prepUpdatedAt) : 'Pas encore enregistré dans la base.';
@@ -1016,11 +1089,11 @@ function fillReport() {
     return sum;
   }, { declared: 0, ready: 0, rejected: 0, gap: 0 });
   const when = new Date().toLocaleString('fr-FR');
-  document.getElementById('report-meta').textContent = "Association Morocco's Creativity · Caravane humanitaire, 11e édition · Douar Ilissi, Azilal · Extrait le " + when + (who && who.full_name ? ' · ' + who.full_name : '') + (s.prepUpdatedAt ? '' : ' · pas encore enregistré dans la base');
-  const body = rows.map((row) => '<tr><td>' + AMC.esc(row.label) + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="num">' + AMC.fmt(row.rejected) + '</td><td class="num">' + AMC.fmt(row.gap) + '</td><td>' + AMC.esc(row.note || (row.gap ? 'Raison non indiquée' : '')) + '</td></tr>').join('');
+  document.getElementById('report-meta').textContent = 'Extrait le ' + when + (who && who.full_name ? ' · ' + who.full_name : '') + (s.prepUpdatedAt ? ' · enregistré le ' + AMC.when(s.prepUpdatedAt) : ' · pas encore enregistré dans la base');
+  const body = rows.map((row) => '<tr><td>' + AMC.esc(row.label) + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="num">' + AMC.fmt(row.rejected) + '</td><td class="num">' + AMC.fmt(row.gap) + '</td><td>' + AMC.esc(row.note || (row.gap ? 'Raison non indiquée' : '—')) + '</td></tr>').join('');
   const gaps = rows.filter((row) => row.gap || row.note);
-  const detail = gaps.length ? gaps.map((row) => '<p><b>' + AMC.esc(row.label) + '</b> · déclaré ' + AMC.fmt(row.declared) + ' · réel ' + AMC.fmt(row.ready) + ' · à écarter ' + AMC.fmt(row.rejected) + ' · écart ' + AMC.fmt(row.gap) + '<br>' + AMC.esc(row.note || 'Raison non indiquée.') + '</p>').join('') : '<p>Aucun écart.</p>';
-  document.getElementById('report-body').innerHTML = '<p class="sub">Le réel est copié du déclaré, puis diminué de ce qui est à écarter. Écart = Déclaré − Réel.</p><table><thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="num">À écarter</th><th class="num">Écart</th><th>Raison</th></tr></thead><tbody>' + body + '<tr><td><b>Total</b></td><td class="num"><b>' + AMC.fmt(totals.declared) + '</b></td><td class="num"><b>' + AMC.fmt(totals.ready) + '</b></td><td class="num"><b>' + AMC.fmt(totals.rejected) + '</b></td><td class="num"><b>' + AMC.fmt(totals.gap) + '</b></td><td></td></tr></tbody></table><h2>Écarts expliqués</h2>' + detail;
+  const detail = gaps.length ? gaps.map((row) => '<article class="report-gap"><b>' + AMC.esc(row.label) + '</b><span>Déclaré ' + AMC.fmt(row.declared) + ' · Réel ' + AMC.fmt(row.ready) + ' · À écarter ' + AMC.fmt(row.rejected) + ' · Écart ' + AMC.fmt(row.gap) + '</span><p>' + AMC.esc(row.note || 'Raison non indiquée.') + '</p></article>').join('') : '<p class="report-empty">Aucun écart.</p>';
+  document.getElementById('report-body').innerHTML = '<div class="report-kpis"><div><b>' + AMC.fmt(totals.declared) + '</b><span>Déclaré</span></div><div><b>' + AMC.fmt(totals.ready) + '</b><span>Réel</span></div><div><b>' + AMC.fmt(totals.rejected) + '</b><span>À écarter</span></div><div><b>' + AMC.fmt(totals.gap) + '</b><span>Écart</span></div></div><p class="report-rule">Le réel est copié du déclaré, puis diminué de ce qui est à écarter. Écart = Déclaré − Réel.</p><table class="report-table"><thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="num">À écarter</th><th class="num">Écart</th><th>Raison</th></tr></thead><tbody>' + body + '<tr class="report-total"><td>Total</td><td class="num">' + AMC.fmt(totals.declared) + '</td><td class="num">' + AMC.fmt(totals.ready) + '</td><td class="num">' + AMC.fmt(totals.rejected) + '</td><td class="num">' + AMC.fmt(totals.gap) + '</td><td></td></tr></tbody></table><h2>Détail des écarts</h2>' + detail;
 }
 document.getElementById('rows').addEventListener('change', (e) => {
   const id = e.target.getAttribute('data-prep');
