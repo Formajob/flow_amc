@@ -425,6 +425,17 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
 .admin-actions select { min-width: 128px; }
 .btn-danger { color: #9b2335; }
 
+body:not(.role-admin) #save-prep { display: none !important; }
+
+.prep-note { width: 100%; min-width: 160px; }
+#prep-report { display: none; }
+body.printing-report .side,
+body.printing-report .noprint,
+body.printing-report #prep-work { display: none !important; }
+body.printing-report #prep-report { display: block !important; }
+body.printing-report .prep-report h1 { margin-top: 0; }
+body.printing-report .prep-report table { width: 100%; }
+
   </style>
 </head>
 <body>
@@ -667,7 +678,8 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
     if (role() !== 'admin') return load();
     const s = load();
     s.prep[id] = s.prep[id] || {};
-    s.prep[id][field] = Math.max(0, Number(qty) || 0);
+    if (field === 'note') s.prep[id].note = String(qty || '').slice(0, 240);
+    else s.prep[id][field] = Math.max(0, Number(String(qty).replace(',', '.')) || 0);
     save(s);
     return s;
   }
@@ -892,6 +904,24 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
       GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
+  async function refreshPrep() {
+    try {
+      const res = await fetch('/api/prep', { credentials: 'same-origin' });
+      if (!res.ok) return load();
+      const data = await res.json();
+      const s = load();
+      const prep = {};
+      (data.lines || []).forEach((line) => {
+        prep[line.item] = { ready: Number(line.ready) || 0, rejected: Number(line.rejected) || 0, note: line.note || '' };
+      });
+      s.prep = prep;
+      s.prepUpdatedAt = data.updatedAt || '';
+      save(s);
+      return s;
+    } catch (err) {
+      return load();
+    }
+  }
   async function refresh() {
     try {
       const res = await fetch('/api/entries', { credentials: 'same-origin' });
@@ -922,6 +952,7 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
           await refresh();
           await refreshMembers();
+          await refreshPrep();
           finish(data);
           return;
         }
@@ -932,7 +963,7 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();

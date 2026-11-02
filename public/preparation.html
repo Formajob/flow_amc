@@ -425,6 +425,17 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
 .admin-actions select { min-width: 128px; }
 .btn-danger { color: #9b2335; }
 
+body:not(.role-admin) #save-prep { display: none !important; }
+
+.prep-note { width: 100%; min-width: 160px; }
+#prep-report { display: none; }
+body.printing-report .side,
+body.printing-report .noprint,
+body.printing-report #prep-work { display: none !important; }
+body.printing-report #prep-report { display: block !important; }
+body.printing-report .prep-report h1 { margin-top: 0; }
+body.printing-report .prep-report table { width: 100%; }
+
   </style>
 </head>
 <body>
@@ -450,17 +461,27 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
   </aside><main class="main">
   <div class="kicker"><i></i> Étape 2 · Préparation</div>
   <h1>Tri et conditionnement</h1>
-  <p class="lead">Après la collecte, on ne croit pas le total déclaré. On compte ce qui est vraiment prêt à partir. L'écart se voit. L'outil ne juge pas l'état d'un vêtement à la place de l'équipe.</p>
-  <section class="card">
+  <p class="lead">Le réel est copié du déclaré. Saisissez seulement ce qui est à écarter, et la raison. L'écart se calcule seul.</p>
+  <section class="card" id="prep-work">
     <h2>Contrôle</h2>
-    <p class="sub">Prêt = pièces qui partent. À écarter = pièces qui ne partent pas. Le reste est l'écart encore non trié.</p>
+    <p class="sub">Réel = Déclaré − À écarter. Écart = Déclaré − Réel. La raison explique l'écart.</p>
     <div style="overflow:auto">
       <table>
-        <thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Prêt</th><th class="num">À écarter</th><th class="num">Écart</th></tr></thead>
+        <thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="num">À écarter</th><th class="num">Écart</th><th>Raison</th></tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <p class="note">Suivi proposé : réception au dépôt, tri portable / à laver / à écarter, recomptage, puis constitution des sacs par le convoi. Pas de nom de famille bénéficiaire à ce stade.</p>
+    <div class="row noprint" style="margin-top:14px">
+      <button class="btn" type="button" id="save-prep">Enregistrer</button>
+      <button class="ghost" type="button" id="print-prep">Rapport</button>
+    </div>
+    <p class="note" id="prep-msg"></p>
+  </section>
+  <section id="prep-report" class="prep-report">
+    <div class="kicker"><i></i> Rapport de préparation</div>
+    <h1>Détail du tri</h1>
+    <p class="lead" id="report-meta"></p>
+    <div id="report-body"></div>
   </section>
 </main></div>
 <noscript><p style="padding:24px;font-family:sans-serif">Activez JavaScript pour entrer dans l’espace AMC.</p></noscript>
@@ -661,7 +682,8 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
     if (role() !== 'admin') return load();
     const s = load();
     s.prep[id] = s.prep[id] || {};
-    s.prep[id][field] = Math.max(0, Number(qty) || 0);
+    if (field === 'note') s.prep[id].note = String(qty || '').slice(0, 240);
+    else s.prep[id][field] = Math.max(0, Number(String(qty).replace(',', '.')) || 0);
     save(s);
     return s;
   }
@@ -886,6 +908,24 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
       GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
+  async function refreshPrep() {
+    try {
+      const res = await fetch('/api/prep', { credentials: 'same-origin' });
+      if (!res.ok) return load();
+      const data = await res.json();
+      const s = load();
+      const prep = {};
+      (data.lines || []).forEach((line) => {
+        prep[line.item] = { ready: Number(line.ready) || 0, rejected: Number(line.rejected) || 0, note: line.note || '' };
+      });
+      s.prep = prep;
+      s.prepUpdatedAt = data.updatedAt || '';
+      save(s);
+      return s;
+    } catch (err) {
+      return load();
+    }
+  }
   async function refresh() {
     try {
       const res = await fetch('/api/entries', { credentials: 'same-origin' });
@@ -916,6 +956,7 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
           await refresh();
           await refreshMembers();
+          await refreshPrep();
           finish(data);
           return;
         }
@@ -926,7 +967,7 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
@@ -934,23 +975,98 @@ body:not(.role-admin) a[href="administration.html"] { display: none !important; 
 
 AMC.onReady(function () {
 
-function render() {
+function rowsOf() {
   const s = AMC.load();
   const st = AMC.stats(s);
-  document.getElementById('rows').innerHTML = AMC.ITEMS.filter((it) => !it.money).map((it) => {
-    const declared = st.byItem[it.id];
+  return AMC.ITEMS.filter((it) => !it.money).map((it) => {
+    const declared = Number(st.byItem[it.id]) || 0;
     const prep = s.prep[it.id] || {};
-    const ready = prep.ready || 0;
-    const rejected = prep.rejected || 0;
-    const gap = declared - ready - rejected;
-    return '<tr><td>' + it.label + '</td><td class="num">' + AMC.fmt(declared) + '</td><td class="num"><input data-prep="' + it.id + '" data-field="ready" type="number" min="0" value="' + ready + '"></td><td class="num"><input data-prep="' + it.id + '" data-field="rejected" type="number" min="0" value="' + rejected + '"></td><td class="num">' + AMC.fmt(gap) + '</td></tr>';
+    const rejected = Math.max(0, Number(prep.rejected) || 0);
+    const ready = Math.max(0, declared - rejected);
+    return {
+      id: it.id,
+      label: it.label,
+      declared: declared,
+      rejected: rejected,
+      ready: ready,
+      gap: declared - ready,
+      note: prep.note || '',
+      over: rejected > declared
+    };
+  });
+}
+function render() {
+  const s = AMC.load();
+  document.getElementById('rows').innerHTML = rowsOf().map((row) => {
+    const warn = row.over ? ' style="color:#9b2335"' : '';
+    return '<tr><td>' + row.label + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="num"><input data-prep="' + row.id + '" data-field="rejected" type="number" min="0" step="any" value="' + row.rejected + '"></td><td class="num"' + warn + '>' + AMC.fmt(row.gap) + '</td><td><input class="prep-note" data-prep="' + row.id + '" data-field="note" maxlength="240" placeholder="Raison de l’écart" value="' + AMC.esc(row.note) + '"></td></tr>';
   }).join('');
+  const msg = document.getElementById('prep-msg');
+  if (msg && !msg.dataset.live) msg.textContent = s.prepUpdatedAt ? 'Dernier enregistrement : ' + AMC.when(s.prepUpdatedAt) : 'Pas encore enregistré dans la base.';
+}
+function fillReport() {
+  const s = AMC.load();
+  const who = AMC.profile();
+  const rows = rowsOf();
+  const totals = rows.reduce((sum, row) => {
+    sum.declared += row.declared;
+    sum.ready += row.ready;
+    sum.rejected += row.rejected;
+    sum.gap += row.gap;
+    return sum;
+  }, { declared: 0, ready: 0, rejected: 0, gap: 0 });
+  const when = new Date().toLocaleString('fr-FR');
+  document.getElementById('report-meta').textContent = "Association Morocco's Creativity · Caravane humanitaire, 11e édition · Douar Ilissi, Azilal · Extrait le " + when + (who && who.full_name ? ' · ' + who.full_name : '') + (s.prepUpdatedAt ? '' : ' · pas encore enregistré dans la base');
+  const body = rows.map((row) => '<tr><td>' + AMC.esc(row.label) + '</td><td class="num">' + AMC.fmt(row.declared) + '</td><td class="num">' + AMC.fmt(row.ready) + '</td><td class="num">' + AMC.fmt(row.rejected) + '</td><td class="num">' + AMC.fmt(row.gap) + '</td><td>' + AMC.esc(row.note || (row.gap ? 'Raison non indiquée' : '')) + '</td></tr>').join('');
+  const gaps = rows.filter((row) => row.gap || row.note);
+  const detail = gaps.length ? gaps.map((row) => '<p><b>' + AMC.esc(row.label) + '</b> · déclaré ' + AMC.fmt(row.declared) + ' · réel ' + AMC.fmt(row.ready) + ' · à écarter ' + AMC.fmt(row.rejected) + ' · écart ' + AMC.fmt(row.gap) + '<br>' + AMC.esc(row.note || 'Raison non indiquée.') + '</p>').join('') : '<p>Aucun écart.</p>';
+  document.getElementById('report-body').innerHTML = '<p class="sub">Le réel est copié du déclaré, puis diminué de ce qui est à écarter. Écart = Déclaré − Réel.</p><table><thead><tr><th>Article</th><th class="num">Déclaré</th><th class="num">Réel</th><th class="num">À écarter</th><th class="num">Écart</th><th>Raison</th></tr></thead><tbody>' + body + '<tr><td><b>Total</b></td><td class="num"><b>' + AMC.fmt(totals.declared) + '</b></td><td class="num"><b>' + AMC.fmt(totals.ready) + '</b></td><td class="num"><b>' + AMC.fmt(totals.rejected) + '</b></td><td class="num"><b>' + AMC.fmt(totals.gap) + '</b></td><td></td></tr></tbody></table><h2>Écarts expliqués</h2>' + detail;
 }
 document.getElementById('rows').addEventListener('change', (e) => {
   const id = e.target.getAttribute('data-prep');
   const field = e.target.getAttribute('data-field');
-  if (id && field) { AMC.setPrep(id, field, e.target.value); render(); }
+  if (!id || !field || AMC.role() !== 'admin') return;
+  AMC.setPrep(id, field, e.target.value);
+  if (field === 'rejected') {
+    const current = rowsOf().find((row) => row.id === id);
+    if (current) AMC.setPrep(id, 'ready', current.ready);
+  }
+  render();
 });
+document.getElementById('save-prep').onclick = async () => {
+  if (AMC.role() !== 'admin') return;
+  const msg = document.getElementById('prep-msg');
+  const rows = rowsOf();
+  const over = rows.find((row) => row.over);
+  if (over) { msg.dataset.live = '1'; msg.textContent = over.label + ' : à écarter dépasse le déclaré.'; return; }
+  const missing = rows.find((row) => row.rejected > 0 && !String(row.note).trim());
+  if (missing) { msg.dataset.live = '1'; msg.textContent = 'Indiquez la raison pour ' + missing.label + '.'; return; }
+  msg.dataset.live = '1';
+  msg.textContent = 'Enregistrement…';
+  try {
+    const res = await fetch('/api/prep', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lines: rows.map((row) => ({ item: row.id, rejected: row.rejected, note: row.note })) })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { msg.textContent = data.message || 'Enregistrement impossible.'; return; }
+    await AMC.refreshPrep();
+    msg.dataset.live = '';
+    render();
+    msg.dataset.live = '1';
+    msg.textContent = data.message || 'Préparation enregistrée.';
+  } catch (err) {
+    msg.textContent = 'La base ne répond pas.';
+  }
+};
+document.getElementById('print-prep').onclick = () => {
+  fillReport();
+  document.body.classList.add('printing-report');
+  window.print();
+};
+window.addEventListener('afterprint', () => document.body.classList.remove('printing-report'));
 render();
 
 });
