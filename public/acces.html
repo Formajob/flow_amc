@@ -480,6 +480,24 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
   .report-banner { display: grid; }
 }
 
+.hello-block { display: flex; align-items: center; gap: 14px; }
+.profile-face, .top-face, .photo-face, .session-face {
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  border-radius: 50%; background: #18213b; color: #fff; font-weight: 800; flex: 0 0 auto;
+}
+.profile-face { width: 64px; height: 64px; font-size: 20px; box-shadow: 0 0 0 3px #fff, 0 0 0 5px #26d4ea; }
+.top-face { width: 42px; height: 42px; font-size: 13px; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c, #26d4ea); }
+.photo-face { width: 72px; height: 72px; font-size: 20px; }
+.session-face { width: 28px; height: 28px; font-size: 10px; text-transform: none; letter-spacing: 0; color: #fff; background: #243256; }
+.profile-face img, .top-face img, .photo-face img, .session-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.face-empty { background: #18213b; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.photo-card { border: 1px solid var(--filet); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: #fff; }
+.photo-card button { border: 0; background: transparent; padding: 0; border-radius: 50%; }
+.photo-card b { color: var(--navy); font-size: 14px; }
+.photo-card span { color: var(--muted); font-size: 11px; word-break: break-all; }
+.role { align-items: center; }
+
   </style>
 </head>
 <body>
@@ -851,6 +869,8 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       const name = session.name || String(session.email || '').split('@')[0] || 'à vous';
       hello.innerHTML = 'Bonjour ' + esc(name) + ' <span class="role-pill">' + label + '</span>';
     }
+    paintFace(document.querySelector('[data-face]'), accessPhoto(session.email), session.name || session.email);
+    paintFace(document.querySelector('[data-session-face]'), accessPhoto(session.email), session.name || session.email);
     if (pages) {
       document.querySelectorAll('.side a[href]').forEach((link) => {
         const href = (link.getAttribute('href') || '').split('?')[0];
@@ -941,6 +961,44 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
+  let photoBook = { access: {}, members: {}, linked: {} };
+  function initials(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    return (parts.map((part) => part[0]).join('') || '?').toUpperCase();
+  }
+  function accessPhoto(email) {
+    return photoBook.access[String(email || '').toLowerCase()] || '';
+  }
+  function memberPhoto(group, slug) {
+    const key = String(group || '') + '-' + String(slug || '');
+    if (photoBook.members[key]) return photoBook.members[key];
+    const email = photoBook.linked[key];
+    return email ? accessPhoto(email) : '';
+  }
+  function paintFace(el, url, name) {
+    if (!el) return;
+    el.replaceChildren();
+    if (url) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = url;
+      el.appendChild(img);
+    } else {
+      el.textContent = initials(name);
+    }
+  }
+  async function refreshPhotos() {
+    try {
+      const res = await fetch('/api/photos', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      photoBook = {
+        access: data.access || {},
+        members: data.members || {},
+        linked: data.linked || {}
+      };
+    } catch (err) { /* photos locales */ }
+  }
   async function refreshPrep() {
     try {
       const res = await fetch('/api/prep', { credentials: 'same-origin' });
@@ -990,6 +1048,7 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
           await refresh();
           await refreshMembers();
           await refreshPrep();
+          await refreshPhotos();
           finish(data);
           return;
         }
@@ -1000,7 +1059,7 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep, refreshPhotos, memberPhoto, initials,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
