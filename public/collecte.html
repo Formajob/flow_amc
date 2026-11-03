@@ -908,8 +908,7 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       const name = session.name || String(session.email || '').split('@')[0] || 'à vous';
       hello.innerHTML = 'Bonjour ' + esc(name) + ' <span class="role-pill">' + label + '</span>';
     }
-    paintFace(document.querySelector('[data-face]'), accessPhoto(session.email), session.name || session.email);
-    paintFace(document.querySelector('[data-session-face]'), accessPhoto(session.email), session.name || session.email);
+    paintSession();
     if (pages) {
       document.querySelectorAll('.side a[href]').forEach((link) => {
         const href = (link.getAttribute('href') || '').split('?')[0];
@@ -995,12 +994,14 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       if (!res.ok) return;
       const data = await res.json();
       if (!Array.isArray(data.members)) return;
+      memberRows = data.members;
       const by = { A: [], B: [], C: [], D: [], E: [] };
       data.members.forEach((m) => { if (by[m.group]) by[m.group].push([m.id, m.name]); });
       GROUPS.forEach((g) => { g.members = by[g.id] || []; });
     } catch (err) { /* liste locale */ }
   }
-  let photoBook = { access: {}, members: {}, linked: {} };
+  let memberRows = [];
+  let photoBook = { access: {}, members: {}, linked: {}, accessList: [], ready: false };
   function initials(name) {
     const parts = String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
     return (parts.map((part) => part[0]).join('') || '?').toUpperCase();
@@ -1008,11 +1009,20 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
   function accessPhoto(email) {
     return photoBook.access[String(email || '').toLowerCase()] || '';
   }
+  function roster() { return memberRows.slice(); }
+  function photoCatalog() { return photoBook; }
   function memberPhoto(group, slug) {
     const key = String(group || '') + '-' + String(slug || '');
     if (photoBook.members[key]) return photoBook.members[key];
     const email = photoBook.linked[key];
     return email ? accessPhoto(email) : '';
+  }
+  function paintSession() {
+    if (!session) return;
+    const url = accessPhoto(session.email);
+    const name = session.name || session.email;
+    paintFace(document.querySelector('[data-face]'), url, name);
+    paintFace(document.querySelector('[data-session-face]'), url, name);
   }
   function paintFace(el, url, name) {
     if (!el) return;
@@ -1034,7 +1044,9 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       photoBook = {
         access: data.access || {},
         members: data.members || {},
-        linked: data.linked || {}
+        linked: data.linked || {},
+        accessList: data.accessList || [],
+        ready: true
       };
     } catch (err) { /* photos locales */ }
   }
@@ -1084,11 +1096,12 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
       if (res.ok) {
         const data = await res.json();
         if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
-          await refresh();
-          await refreshMembers();
-          await refreshPrep();
-          await refreshPhotos();
+          const photosPromise = refreshPhotos();
+          await Promise.all([refresh(), refreshMembers(), refreshPrep()]);
           finish(data);
+          await photosPromise;
+          paintSession();
+          document.dispatchEvent(new Event('amc-photos'));
           return;
         }
       }
@@ -1098,7 +1111,7 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep, refreshPhotos, memberPhoto, initials,
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep, refreshPhotos, memberPhoto, initials, roster, photoCatalog,
     memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();

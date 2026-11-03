@@ -200,14 +200,27 @@ function admin(req) {
 export async function GET(req) {
   const session = sessionOf(req)
   if (!session) return reply({ message: "Connexion requise." }, 401)
-  const ready = await ensureGroups()
-  if (!ready || !ready.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
-  const found = await loadRows()
+  let found = await loadRows()
   if (!found.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
-  await seedMissing(Array.isArray(found.data) ? found.data : [])
-  const again = await loadRows()
-  if (!again.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
-  const members = (Array.isArray(again.data) ? again.data : []).filter(visible).map(front)
+  const ids = new Set((Array.isArray(found.data) ? found.data : []).map((row) => row.id))
+  const missing = SEED.filter((row) => !ids.has(row[0] + "-" + row[1]) && !ids.has("X-" + row[0] + "-" + row[1]))
+  if (missing.length) {
+    const ready = await ensureGroups()
+    if (!ready || !ready.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
+    await sb("/rest/v1/amc_members", {
+      method: "POST",
+      prefer: "return=minimal",
+      body: missing.map((row, index) => ({
+        id: row[0] + "-" + row[1],
+        group_id: CAMPAIGN + "-" + row[0],
+        name: row[2],
+        sort_order: index + 1
+      }))
+    })
+    found = await loadRows()
+    if (!found.ok) return reply({ message: "La liste des noms ne répond pas." }, 502)
+  }
+  const members = (Array.isArray(found.data) ? found.data : []).filter(visible).map(front)
   members.sort((a, b) => a.group.localeCompare(b.group) || a.name.localeCompare(b.name, "fr"))
   return reply({ members }, 200)
 }

@@ -140,8 +140,9 @@ export async function GET(req) {
   if (!session) return reply({ message: "Connexion requise." }, 401)
   const env = supabase()
   if (!env) return reply({ access: {}, members: {}, linked: LINKED }, 200)
-  const accessList = await listed("access/")
-  const memberList = await listed("member/")
+  const pair = await Promise.all([listed("access/"), listed("member/")])
+  const accessList = pair[0]
+  const memberList = pair[1]
   const access = {}
   const members = {}
   if (accessList.ok) {
