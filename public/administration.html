@@ -262,11 +262,6 @@ body.role-saisie #composer,
 body.role-saisie #access-admin,
 body.role-saisie [data-del],
 body.role-saisie #targets { display: none !important; }
-body.role-saisie .side a[href="index.html"],
-body.role-saisie .side a[href="preparation.html"],
-body.role-saisie .side a[href="transport.html"],
-body.role-saisie .side a[href="distribution.html"],
-body.role-saisie .side a[href="classement.html"] { display: none !important; }
 
 @media print {
   .side, .noprint { display: none !important; }
@@ -497,6 +492,13 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
 .photo-card b { color: var(--navy); font-size: 14px; }
 .photo-card span { color: var(--muted); font-size: 11px; word-break: break-all; }
 .role { align-items: center; }
+
+body.role-saisie #prep-work input,
+body.role-saisie #prep-work button#save-prep,
+body.role-saisie #lead1,
+body.role-saisie #lead2,
+body.role-saisie [data-check],
+body.role-saisie #households { pointer-events: none; }
 
   </style>
 </head>
@@ -871,7 +873,7 @@ body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-c
   }
   function finish(next) {
     const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
-    const pages = cleanRole === 'saisie' ? ['collecte.html', 'communiques.html'] : null;
+    const pages = cleanRole === 'saisie' ? ((Array.isArray(next.pages) && next.pages.length ? next.pages : ['collecte.html', 'communiques.html']).filter((href) => href !== 'administration.html')) : null;
     session = { email: String(next.email || '').toLowerCase(), name: next.name || '', role: cleanRole, pages: pages, items: Array.isArray(next.items) ? next.items : null };
     const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     if (pages && pages.indexOf(here) === -1) {
