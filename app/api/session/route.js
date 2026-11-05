@@ -39,15 +39,18 @@ function json(body, status, cookie) {
 }
 
 export async function GET(request) {
-  const session = auth.readSession(asReq(request))
+  const req = asReq(request)
+  const session = auth.readSession(req)
   if (!session) return json({ message: 'Connexion requise.' }, 401)
+  const pages = auth.pagesForAccount(session.email, session.role)
+  const token = auth.signSession(session.email, session.role, session.name, pages)
   return json({
     email: session.email,
     name: session.name || '',
     role: session.role,
-    pages: session.pages || [],
+    pages,
     items: session.items || null
-  }, 200)
+  }, 200, token ? auth.cookieHeader(token, req) : '')
 }
 
 export async function DELETE(request) {

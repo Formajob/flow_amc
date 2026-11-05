@@ -868,7 +868,9 @@ body.role-saisie #households { pointer-events: none; }
   }
   function finish(next) {
     const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
-    const pages = cleanRole === 'saisie' ? ((Array.isArray(next.pages) && next.pages.length ? next.pages : ['collecte.html', 'communiques.html']).filter((href) => href !== 'administration.html')) : null;
+    const yassirPages = ['index.html', 'collecte.html', 'preparation.html', 'transport.html', 'distribution.html', 'classement.html', 'communiques.html'];
+    const email = String(next.email || '').toLowerCase();
+    const pages = cleanRole !== 'saisie' ? null : (email === 'yassirkrami01@gmail.com' ? yassirPages : ((Array.isArray(next.pages) && next.pages.length ? next.pages : ['collecte.html', 'communiques.html']).filter((href) => href !== 'administration.html')));
     session = { email: String(next.email || '').toLowerCase(), name: next.name || '', role: cleanRole, pages: pages, items: Array.isArray(next.items) ? next.items : null };
     const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     if (pages && pages.indexOf(here) === -1) {
