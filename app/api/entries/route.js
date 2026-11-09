@@ -30,7 +30,10 @@ const ITEMS = {
   manteaux: ["Manteaux", "pièce", false, 8],
   chales: ["Châles", "pièce", false, 9],
   livres: ["Livres", "pièce", false, 11],
-  argent: ["Dons", "MAD", true, 10]
+  argent: ["Dons", "MAD", true, 10],
+  paniers: ["Paniers", "panier", false, 12],
+  tri: ["Tri", "tri", false, 13],
+  deplacement: ["Déplacement", "déplacement", false, 14]
 }
 
 const ITEM_SCOPE = {

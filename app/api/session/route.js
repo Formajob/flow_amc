@@ -49,7 +49,7 @@ export async function GET(request) {
     name: session.name || '',
     role: session.role,
     pages,
-    items: session.items || null
+    items: auth.itemsFor(session.email)
   }, 200, token ? auth.cookieHeader(token, req) : '')
 }
 
