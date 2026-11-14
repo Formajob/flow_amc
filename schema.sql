@@ -188,7 +188,11 @@ insert into public.amc_item_types (id, label, unit, is_money, sort_order) values
   ('jackets', 'Jackets', 'pièce', false, 7),
   ('manteaux', 'Manteaux', 'pièce', false, 8),
   ('chales', 'Châles', 'pièce', false, 9),
-  ('argent', 'Dons', 'MAD', true, 10)
+  ('argent', 'Dons', 'MAD', true, 10),
+  ('paniers', 'Paniers', 'panier', false, 12),
+  ('tri', 'Tri', 'tri', false, 13),
+  ('deplacement', 'Déplacement', 'déplacement', false, 14),
+  ('paniers2', 'Panier 2', 'panier', false, 15)
 on conflict (id) do nothing;
 
 insert into public.amc_targets (campaign_id, item_id, qty, proposed) values

@@ -579,6 +579,7 @@ body.role-saisie #households { pointer-events: none; }
     { id: 'livres', label: 'Livres' },
     { id: 'argent', label: 'Dons', money: true },
     { id: 'paniers', label: 'Paniers', activity: true },
+    { id: 'paniers2', label: 'Panier 2', activity: true },
     { id: 'tri', label: 'Tri', activity: true },
     { id: 'deplacement', label: 'Déplacement', activity: true }
   ];
@@ -607,7 +608,7 @@ body.role-saisie #households { pointer-events: none; }
   ];
   const DEFAULT_TARGETS = {
     pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
-    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, livres: 0, argent: 20000, paniers: 0, tri: 0, deplacement: 0
+    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, livres: 0, argent: 20000, paniers: 0, paniers2: 0, tri: 0, deplacement: 0
   };
   const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31, E: 0.44 };
   const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
@@ -629,9 +630,10 @@ body.role-saisie #households { pointer-events: none; }
     const books = row && typeof row === "object" ? Number(row.books) || 0 : 0;
     const cash = row && typeof row === "object" ? Number(row.money) || 0 : Number(money) || 0;
     const baskets = row && typeof row === "object" && row.panierScore != null ? Number(row.panierScore) : panierPoints(row && row.paniers);
+    const baskets2 = row && typeof row === "object" ? Number(row.paniers2) || 0 : 0;
     const tri = row && typeof row === "object" ? Number(row.tri) || 0 : 0;
     const move = row && typeof row === "object" ? Number(row.deplacement) || 0 : 0;
-    return clothes / 10 + books / 5 + cash / 50 + baskets + tri * 5 + move;
+    return clothes / 10 + books / 5 + cash / 50 + baskets + baskets2 * 2 + tri * 5 + move;
   }
   function pct(n, d) { return d > 0 ? Math.max(0, Math.round((n / d) * 100)) : 0; }
   function daysLeft() {
@@ -706,9 +708,9 @@ body.role-saisie #households { pointer-events: none; }
     const byMember = {};
     const byItem = {};
     GROUPS.forEach((g) => {
-      byGroup[g.id] = { pieces: 0, clothes: 0, books: 0, paniers: 0, tri: 0, deplacement: 0, money: 0, items: {} };
+      byGroup[g.id] = { pieces: 0, clothes: 0, books: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, items: {} };
       byMember[g.id] = {};
-      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, clothes: 0, books: 0, paniers: 0, tri: 0, deplacement: 0, money: 0, name: m[1] }; });
+      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, clothes: 0, books: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, name: m[1] }; });
     });
     ITEMS.forEach((it) => { byItem[it.id] = 0; });
     const panierQty = {};
@@ -719,7 +721,7 @@ body.role-saisie #households { pointer-events: none; }
         byGroup[e.group].money += q;
         byItem.argent += q;
         if (byMember[e.group][e.member]) byMember[e.group][e.member].money += q;
-      } else if (e.item === 'paniers' || e.item === 'tri' || e.item === 'deplacement') {
+      } else if (e.item === 'paniers' || e.item === 'paniers2' || e.item === 'tri' || e.item === 'deplacement') {
         byGroup[e.group][e.item] += q;
         byGroup[e.group].items[e.item] = (byGroup[e.group].items[e.item] || 0) + q;
         byItem[e.item] += q;
