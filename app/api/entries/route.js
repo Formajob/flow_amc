@@ -32,6 +32,7 @@ const ITEMS = {
   livres: ["Livres", "pièce", false, 11],
   argent: ["Dons", "MAD", true, 10],
   paniers: ["Paniers", "panier", false, 12],
+  paniers2: ["Panier 2", "panier", false, 15],
   tri: ["Tri", "tri", false, 13],
   deplacement: ["Déplacement", "déplacement", false, 14]
 }
