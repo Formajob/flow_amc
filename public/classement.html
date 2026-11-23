@@ -538,7 +538,7 @@ body.role-saisie #households { pointer-events: none; }
     <div>
       <div class="kicker"><i></i> Classement</div>
       <h1>Têtes de groupe</h1>
-      <p class="lead">50 MAD = 1 point. 10 vêtements = 1 point. 5 livres = 1 point. 1er et 2e panier : 3 points chacun, puis 4 points. Panier 2 : 2 points chacun. Tri : 5 points. Déplacement : 1 point.</p>
+      <p class="lead">50 MAD = 1 point. 10 vêtements = 1 point. 5 livres = 1 point. Couvertures : par personne, 3 points chacune pour les 3 premières, puis 4 points par couverture à partir de la 4e. 1er et 2e panier : 3 points chacun, puis 4 points. Panier 2 : 2 points chacun. Tri : 5 points. Déplacement : 1 point.</p>
     </div>
     <div class="extracts noprint">
       <button class="extract extract-report" type="button" id="pdf-report">
@@ -579,6 +579,7 @@ body.role-saisie #households { pointer-events: none; }
     { id: 'jackets', label: 'Jackets' },
     { id: 'manteaux', label: 'Manteaux' },
     { id: 'chales', label: 'Châles' },
+    { id: 'couverture', label: 'Couverture' },
     { id: 'livres', label: 'Livres' },
     { id: 'argent', label: 'Dons', money: true },
     { id: 'paniers', label: 'Paniers', activity: true },
@@ -611,7 +612,7 @@ body.role-saisie #households { pointer-events: none; }
   ];
   const DEFAULT_TARGETS = {
     pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
-    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, livres: 0, argent: 20000, paniers: 0, paniers2: 0, tri: 0, deplacement: 0
+    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, couverture: 0, livres: 0, argent: 20000, paniers: 0, paniers2: 0, tri: 0, deplacement: 0
   };
   const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31, E: 0.44 };
   const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
@@ -628,15 +629,21 @@ body.role-saisie #households { pointer-events: none; }
     const q = Math.max(0, Number(n) || 0);
     return Math.min(q, 2) * 3 + Math.max(0, q - 2) * 4;
   }
+  function couverturePoints(n) {
+    const q = Math.max(0, Number(n) || 0);
+    return Math.min(q, 3) * 3 + Math.max(0, q - 3) * 4;
+  }
   function pts(row, money) {
     const clothes = row && typeof row === "object" ? Number(row.clothes) || 0 : Number(row) || 0;
     const books = row && typeof row === "object" ? Number(row.books) || 0 : 0;
+    const covers = row && typeof row === "object" ? Number(row.couverture) || 0 : 0;
+    const couvertureScore = row && typeof row === "object" && row.couvertureScore != null ? Number(row.couvertureScore) || 0 : couverturePoints(covers);
     const cash = row && typeof row === "object" ? Number(row.money) || 0 : Number(money) || 0;
     const baskets = row && typeof row === "object" && row.panierScore != null ? Number(row.panierScore) : panierPoints(row && row.paniers);
     const baskets2 = row && typeof row === "object" ? Number(row.paniers2) || 0 : 0;
     const tri = row && typeof row === "object" ? Number(row.tri) || 0 : 0;
     const move = row && typeof row === "object" ? Number(row.deplacement) || 0 : 0;
-    return clothes / 10 + books / 5 + cash / 50 + baskets + baskets2 * 2 + tri * 5 + move;
+    return clothes / 10 + books / 5 + couvertureScore + cash / 50 + baskets + baskets2 * 2 + tri * 5 + move;
   }
   function pct(n, d) { return d > 0 ? Math.max(0, Math.round((n / d) * 100)) : 0; }
   function daysLeft() {
@@ -711,12 +718,13 @@ body.role-saisie #households { pointer-events: none; }
     const byMember = {};
     const byItem = {};
     GROUPS.forEach((g) => {
-      byGroup[g.id] = { pieces: 0, clothes: 0, books: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, items: {} };
+      byGroup[g.id] = { pieces: 0, clothes: 0, books: 0, couverture: 0, couvertureScore: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, items: {} };
       byMember[g.id] = {};
-      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, clothes: 0, books: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, name: m[1] }; });
+      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, clothes: 0, books: 0, couverture: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, name: m[1] }; });
     });
     ITEMS.forEach((it) => { byItem[it.id] = 0; });
     const panierQty = {};
+    const couvertureQty = {};
     s.entries.forEach((e) => {
       if (!byGroup[e.group] || byItem[e.item] == null) return;
       const q = Number(e.qty) || 0;
@@ -730,6 +738,17 @@ body.role-saisie #households { pointer-events: none; }
         byItem[e.item] += q;
         if (byMember[e.group][e.member]) byMember[e.group][e.member][e.item] += q;
         if (e.item === 'paniers') panierQty[e.group + '|' + e.member] = (panierQty[e.group + '|' + e.member] || 0) + q;
+      } else if (e.item === 'couverture') {
+        byGroup[e.group].couverture += q;
+        byGroup[e.group].pieces += q;
+        byGroup[e.group].items.couverture = (byGroup[e.group].items.couverture || 0) + q;
+        byItem.couverture += q;
+        if (byMember[e.group][e.member]) {
+          byMember[e.group][e.member].couverture += q;
+          byMember[e.group][e.member].pieces += q;
+        }
+        const key = e.group + '|' + e.member;
+        couvertureQty[key] = (couvertureQty[key] || 0) + q;
       } else {
         const kind = e.item === 'livres' ? 'books' : 'clothes';
         byGroup[e.group][kind] += q;
@@ -745,6 +764,10 @@ body.role-saisie #households { pointer-events: none; }
     Object.keys(panierQty).forEach((key) => {
       const group = key.split('|')[0];
       if (byGroup[group]) byGroup[group].panierScore = (byGroup[group].panierScore || 0) + panierPoints(panierQty[key]);
+    });
+    Object.keys(couvertureQty).forEach((key) => {
+      const group = key.split('|')[0];
+      if (byGroup[group]) byGroup[group].couvertureScore += couverturePoints(couvertureQty[key]);
     });
     const pieceTarget = ITEMS.filter((it) => !it.money && !it.activity).reduce((sum, it) => sum + (Number(s.targets[it.id]) || 0), 0);
     const pieces = ITEMS.filter((it) => !it.money && !it.activity).reduce((sum, it) => sum + byItem[it.id], 0);
@@ -816,7 +839,7 @@ body.role-saisie #households { pointer-events: none; }
 
   function defaultNotices() {
     return [
-      { id: 'n1', title: 'Collecte ouverte', body: 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, et les dons.', at: '2026-10-24T09:00:00', author: 'Admin' },
+      { id: 'n1', title: 'Collecte ouverte', body: 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, couvertures et dons.', at: '2026-10-24T09:00:00', author: 'Admin' },
       { id: 'n2', title: 'Rappel de la caravane', body: 'Douar Ilissi, région d’Azilal, les 26 et 27 décembre 2026. Merci de transmettre les quantités au poste de saisie.', at: '2026-10-26T18:00:00', author: 'Admin' }
     ];
   }
@@ -1128,7 +1151,7 @@ body.role-saisie #households { pointer-events: none; }
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
     addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep, refreshPhotos, memberPhoto, initials, roster, photoCatalog,
-    memberName, itemOf, fmt, esc, pts, pct, daysLeft, visibleItems, itemAllowed
+    memberName, itemOf, fmt, esc, pts, couverturePoints, pct, daysLeft, visibleItems, itemAllowed
   };
   boot();
 })();
@@ -1366,8 +1389,10 @@ AMC.onReady(function () {
     pages.pop();
     p.text(40, y, "Rapport de classement", 18, true, NAVY);
     p.text(40, y - 18, "Extrait le " + model.dateLabel + " depuis ACX Flow", 9, false, MUTED);
-    p.text(40, y - 32, "50 MAD = 1 point. 10 vêtements = 1 point. 5 livres = 1 point. 1er et 2e panier : 3 points chacun, puis 4 points. Panier 2 : 2 points chacun. Tri : 5 points. Déplacement : 1 point.", 8, false, MUTED);
-    y -= 54;
+    p.text(40, y - 32, "50 MAD = 1 pt · 10 vêtements = 1 pt · 5 livres = 1 pt.", 8, false, MUTED);
+    p.text(40, y - 42, "Couvertures, par personne : 3 pts chacune pour les 3 premières, puis 4 pts dès la 4e.", 8, false, MUTED);
+    p.text(40, y - 52, "1er et 2e panier : 3 pts chacun, puis 4 · Panier 2 : 2 pts · Tri : 5 pts · Déplacement : 1 pt.", 8, false, MUTED);
+    y -= 68;
     p.fill(40, y - 8, 515, 22, PAPER);
     p.text(48, y, "Cinq groupes", 9, true, NAVY);
     p.text(150, y, num(model.pieces) + " pièces", 9, false, INK);
