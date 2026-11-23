@@ -20,20 +20,6 @@
   --rouge: #b42318;
   --white: #fff;
 }
-<style>html:not(.unlocked) body { visibility: hidden; }</style>
-<script>
-fetch('/api/session', { credentials: 'same-origin' }).then(function (r) {
-  if (!r.ok) { location.replace('login.html'); return null; }
-  return r.json();
-}).then(function (s) {
-  if (!s) return;
-  document.documentElement.classList.add('unlocked');
-  document.body.classList.add(s.role === 'admin' ? 'role-admin' : 'role-membre');
-  var who = document.querySelector('[data-who]');
-  if (who) who.textContent = s.email + (s.role === 'admin' ? ' · Admin' : ' · Membre');
-}).catch(function () { location.replace('login.html'); });
-</script>
-<style>body.role-membre #form,body.role-membre #composer,body.role-membre #close,body.role-membre #undo,body.role-membre #access-admin,body.role-membre [data-del] { display: none !important; }body.role-membre .main input,body.role-membre .main textarea,body.role-membre .main select { pointer-events: none; }</style>
 * { box-sizing: border-box; }
 html, body { margin: 0; min-height: 100%; }
 body {
@@ -258,48 +244,331 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
   *, *::before, *::after { animation: none !important; transition: none !important; }
   .bar i, .vtrack i { width: var(--w); height: var(--h); }
 }
+.gate label { display: grid; gap: 6px; margin: 12px 0 0; font-size: 13px; font-weight: 750; color: var(--navy); }
+.gate-error { min-height: 1.2em; margin: 10px 0; color: #9b2c2c; font-size: 13px; font-weight: 700; }
+.gate .btn { width: 100%; margin-top: 4px; }
+.consult { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #eef8fb; color: var(--navy); font-size: 13px; font-weight: 700; }
+.session-who { color: #d5deec; font-size: 11px; line-height: 1.35; word-break: break-all; }
+body.role-membre .writes,
+body.role-membre #composer,
+body.role-membre #close,
+body.role-membre #undo,
+body.role-membre #access-admin,
+body.role-membre [data-del] { display: none !important; }
+body.role-membre .main input,
+body.role-membre .main textarea,
+body.role-membre .main select { pointer-events: none; background: #f6f7fb; }
+body.role-saisie #composer,
+body.role-saisie #access-admin,
+body.role-saisie [data-del],
+body.role-saisie #targets { display: none !important; }
+
 @media print {
   .side, .noprint { display: none !important; }
   .app { display: block; }
   .share { break-inside: avoid; }
 }
 
+.brand-logo { width: 156px; height: auto; display: block; object-fit: contain; }
+.side { padding: 18px 14px 16px; gap: 14px; }
+nav a, .nav-group > button { gap: 10px; justify-content: flex-start; }
+nav a svg, .nav-group > button svg { width: 16px; height: 16px; flex: 0 0 16px; }
+.nav-ico { display: inline-flex; }
+.nav-group .sub, .nav-group.open .sub { grid-template-rows: 1fr; }
+.nav-group .chev, .nav-group.open .chev { transform: rotate(90deg); }
+.hello { margin: 2px 0 6px; font-size: 28px; letter-spacing: -.03em; color: var(--navy); font-weight: 750; }
+.role-pill { display: inline-flex; align-items: center; margin-left: 8px; padding: 3px 9px; border-radius: 999px; background: rgba(38,212,234,.16); color: var(--cyan-d); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; vertical-align: middle; }
+.head-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-end; margin-bottom: 12px; }
+.vol-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.gcard { animation: rise .5s ease both; }
+.gcard:nth-child(2) { animation-delay: .05s; }
+.gcard:nth-child(3) { animation-delay: .1s; }
+.gcard:nth-child(4) { animation-delay: .15s; }
+.gcard:nth-child(5) { animation-delay: .2s; }
+.podium { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin: 0 0 14px; }
+.top-card { background: #fff; border: 1px solid var(--filet); border-radius: 18px; padding: 14px; position: relative; overflow: hidden; animation: pop .55s cubic-bezier(.2,.8,.2,1) both; }
+.top-card:nth-child(2) { animation-delay: .06s; }
+.top-card:nth-child(3) { animation-delay: .12s; }
+.top-card:nth-child(4) { animation-delay: .18s; }
+.top-card:nth-child(5) { animation-delay: .24s; }
+.top-card:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4px; background: var(--c, var(--cyan)); }
+.medal { width: 36px; height: 36px; border-radius: 12px; display: grid; place-items: center; color: #fff; font-weight: 800; box-shadow: 0 8px 16px rgba(11,19,48,.12); }
+.medal.gold { background: linear-gradient(145deg, #f3d27a, #c9a227); animation: shine 2.4s ease infinite; }
+.medal.silver { background: linear-gradient(145deg, #f4f7fb, #9aa8bc); color: #18213b; }
+.medal.bronze { background: linear-gradient(145deg, #e7b089, #b5733a); }
+.cheer { margin: 8px 0 0; color: var(--encre); font-size: 13px; line-height: 1.4; }
+.share { animation: rise .45s ease both; }
+.share li.lead { background: rgba(38,212,234,.08); border-radius: 10px; padding: 7px 6px; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes shine { 0%, 100% { filter: saturate(1); } 50% { filter: saturate(1.35) brightness(1.08); } }
+@media (max-width: 1100px) { .vol-grid, .podium { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px) { .vol-grid, .podium, .head-row { grid-template-columns: 1fr; display: grid; } .hello { font-size: 24px; } }
+
+.sheet-filters { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.sheet { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+.sheet th { text-align: left; color: var(--muted); font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.sheet td, .sheet th { padding: 8px 6px; border-bottom: 1px solid var(--filet); vertical-align: middle; }
+.qty-picks { display: flex; gap: 6px; }
+.qty-picks button { border: 1px solid var(--filet); background: #fff; border-radius: 999px; padding: 6px 10px; font-weight: 800; color: var(--navy); }
+.row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+body.role-membre .sheet-filters input, body.role-membre .sheet-filters select { pointer-events: auto; background: #fff; }
+body.role-saisie .sheet [data-drop] { display: inline-flex !important; }
+@media (max-width: 760px) { .sheet-filters { grid-template-columns: 1fr; } }
+
+.rank-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 18px; }
+.rank-head .lead { margin-bottom: 0; max-width: 640px; }
+.extracts { display: flex; gap: 10px; flex: 0 0 auto; align-items: center; }
+#pdf-msg:empty { display: none; }
+.extract {
+  position: relative; overflow: hidden; isolation: isolate;
+  border: 0; border-radius: 999px; padding: 10px 16px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 800; letter-spacing: -.01em; cursor: pointer;
+  animation: extract-in .6s cubic-bezier(.2,.8,.2,1) both;
+}
+.extract svg { width: 16px; height: 16px; flex: 0 0 16px; animation: extract-bob 1.8s ease-in-out infinite; }
+.extract::after {
+  content: ""; position: absolute; top: 0; bottom: 0; left: 0; width: 38%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.55), transparent);
+  transform: translateX(-140%); animation: extract-sheen 2.8s ease-in-out infinite; pointer-events: none;
+}
+.extract-report { background: var(--navy); color: #fff; box-shadow: 0 10px 22px rgba(11,19,48,.18); animation-delay: .05s; }
+.extract-certs { background: linear-gradient(145deg, #f6dc8d, #c9a227); color: #18213b; box-shadow: 0 10px 22px rgba(201,162,39,.32); animation-delay: .16s; }
+.extract-report::after { animation-delay: .4s; }
+.extract:hover { transform: translateY(-3px); }
+.extract-report:hover { box-shadow: 0 14px 26px rgba(11,19,48,.28); }
+.extract-certs:hover { box-shadow: 0 14px 26px rgba(201,162,39,.42); }
+.extract:hover svg { animation: extract-drop .45s ease; }
+.extract:disabled { opacity: .6; transform: none; cursor: wait; }
+@keyframes extract-in { from { opacity: 0; transform: translateY(10px) scale(.96); } to { opacity: 1; transform: none; } }
+@keyframes extract-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(2px); } }
+@keyframes extract-drop { 0% { transform: translateY(-2px); } 60% { transform: translateY(3px); } 100% { transform: translateY(0); } }
+@keyframes extract-sheen { 0%, 55% { transform: translateX(-140%); } 100% { transform: translateX(320%); } }
+@media (prefers-reduced-motion: reduce) {
+  .extract, .extract svg, .extract::after { animation: none; }
+}
+.assoc { display: flex; align-items: center; gap: 14px; background: #fff; border: 1px solid var(--filet); border-radius: 16px; padding: 12px 14px; margin: 12px 0; }
+.brand-chip { background: var(--navy); border-radius: 12px; padding: 9px 12px; flex: 0 0 auto; }
+.brand-chip img { width: 132px; height: auto; display: block; }
+.assoc b { color: var(--navy); }
+.assoc-meta { color: var(--muted); font-size: 12.5px; line-height: 1.45; margin-top: 3px; }
+.place-tag { font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.top-card.lead-place { box-shadow: 0 14px 28px rgba(11,19,48,.08); }
+.section-label { margin: 4px 0 10px; font-size: 16px; color: var(--navy); }
+.share header .subhead { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
+.share header .pill { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #fff; background: rgba(255,255,255,.16); border-radius: 999px; padding: 3px 8px; }
+@media (max-width: 760px) {
+  .rank-head, .assoc { display: grid; }
+  .rank-page .stats { grid-template-columns: 1fr 1fr; }
+}
+
+.support-line { color: #9eb0c8; font-size: 13px; line-height: 1.5; }
+.support-line a { color: #d5deec; text-decoration: none; }
+.nav-toggle {
+  display: none; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,.18);
+  border-radius: 12px; background: transparent; padding: 0; align-items: center; justify-content: center;
+  flex-direction: column; gap: 5px; flex: 0 0 42px;
+}
+.nav-toggle span { display: block; width: 16px; height: 2px; border-radius: 2px; background: #fff; transition: transform .2s ease, opacity .2s ease; }
+.side.is-open .nav-toggle span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.side.is-open .nav-toggle span:nth-child(2) { opacity: 0; }
+.side.is-open .nav-toggle span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+@media (max-width: 760px) {
+  .app { display: block; padding-top: 64px; }
+  .app > .side {
+    position: fixed; top: 0; left: 0; right: 0; height: 64px; z-index: 30;
+    display: flex; flex-direction: row; align-items: center; gap: 10px;
+    padding: 8px 12px; overflow: visible;
+  }
+  .app > .side .brand-logo { width: 118px; }
+  .app > .side .space, .app > .side .foot { display: none; }
+  .app > .side .role { display: none; }
+  .nav-toggle { display: inline-flex; }
+  .app > .side nav {
+    display: none; position: fixed; top: 64px; left: 0; right: 0; bottom: 0; z-index: 31;
+    background: var(--navy); padding: 8px 12px 88px; overflow: auto;
+  }
+  .app > .side.is-open nav {
+    display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; gap: 4px;
+  }
+  .app > .side nav > a,
+  .app > .side nav > .nav-group { align-self: start; width: 100%; height: auto; flex: 0 0 auto; }
+  .app > .side nav a,
+  .app > .side .nav-group > button { height: auto; min-height: 44px; }
+  .app > .side .sub a { min-height: 40px; padding-left: 28px; }
+  .app > .side.is-open .role {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 32;
+    justify-content: space-between; align-items: center; gap: 10px;
+    padding: 12px 14px calc(12px + env(safe-area-inset-bottom));
+    background: #0b1330; border-top: 1px solid rgba(255,255,255,.08);
+  }
+  .app > .side nav a { white-space: normal; }
+  body.nav-open { overflow: hidden; }
+  body.nav-open .acxsw-fab, body.nav-open .acxsw-panel { display: none; }
+  .panel { padding: 22px 16px; }
+  .panel h1 { font-size: 28px; }
+  .access-main { padding: 16px; }
+  .main { padding: 16px 12px 40px; }
+  .extracts { flex-wrap: wrap; }
+}
+
+.admin-only { display: none; }
+body.role-admin .admin-only { display: block; }
+
+body:not(.role-admin) a[href="administration.html"] { display: none !important; }
+.admin-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.admin-actions select { min-width: 128px; }
+.btn-danger { color: #9b2335; }
+
+body:not(.role-admin) #save-prep { display: none !important; }
+
+.prep-scroll { overflow: auto; }
+.prep-sheet { width: 100%; table-layout: fixed; border-collapse: separate; border-spacing: 0; }
+.prep-sheet .c-article { width: 18%; }
+.prep-sheet .c-num { width: 11%; }
+.prep-sheet .c-edit { width: 15%; }
+.prep-sheet .c-note { width: 34%; }
+.prep-sheet th, .prep-sheet td { padding: 8px 8px; vertical-align: middle; }
+.prep-sheet thead th { padding-bottom: 10px; }
+.prep-sheet th.edit, .prep-sheet th.note { text-align: left; padding-left: 10px; padding-right: 10px; }
+.prep-sheet td.edit, .prep-sheet td.note { text-align: left; padding-left: 0; padding-right: 0; }
+.prep-sheet td.edit input, .prep-sheet td.note input { width: 100%; margin: 0; text-align: left; }
+.prep-sheet td.num, .prep-sheet th.num { text-align: right; padding-right: 10px; }
+#prep-report { display: none; }
+.report-banner {
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  background: #0b1330; color: #fff; border-radius: 18px; padding: 18px 22px;
+}
+.report-app { font-size: 28px; font-weight: 800; letter-spacing: -.04em; line-height: 1; }
+.report-banner small { display: block; margin-top: 6px; color: #9eb0c8; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+.report-banner-side { font-size: 13px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #f6dc8d; }
+.report-meta { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.report-rule { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.report-kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 4px 0 14px; }
+.report-kpis div { background: #fff; border: 1px solid var(--filet); border-radius: 14px; padding: 12px 14px; }
+.report-kpis b { display: block; color: var(--navy); font-size: 22px; letter-spacing: -.03em; }
+.report-kpis span { color: var(--muted); font-size: 12px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+.report-table { width: 100%; border-collapse: collapse; margin-top: 4px; }
+.report-table th { background: #0b1330; color: #fff; text-align: left; font-size: 11px; letter-spacing: .04em; text-transform: uppercase; }
+.report-table th.num, .report-table td.num { text-align: right; }
+.report-table th, .report-table td { padding: 8px 10px; border-bottom: 1px solid var(--filet); }
+.report-table tbody tr:nth-child(even) { background: #f6f7fb; }
+.report-total td { font-weight: 800; color: var(--navy); background: #fff6e0 !important; border-bottom: 0; }
+.prep-report h2 { margin: 18px 0 8px; color: var(--navy); font-size: 16px; }
+.report-gap { break-inside: avoid; border: 1px solid var(--filet); border-left: 4px solid #c9a227; border-radius: 12px; padding: 10px 12px; margin: 8px 0; background: #fff; }
+.report-gap b { color: var(--navy); }
+.report-gap span { display: block; color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.report-gap p { margin: 6px 0 0; }
+.report-empty { color: var(--muted); }
+body.printing-report .side,
+body.printing-report .noprint,
+body.printing-report #prep-work { display: none !important; }
+body.printing-report #prep-report { display: block !important; }
+body.printing-report .main { padding: 0; }
+body.printing-report .prep-report,
+body.printing-report .prep-report * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+@page { margin: 12mm; }
+@media (max-width: 760px) {
+  .prep-sheet .c-article { width: 120px; }
+  .prep-sheet .c-note { width: 180px; }
+  .report-kpis { grid-template-columns: 1fr 1fr; }
+  .report-banner { display: grid; }
+}
+
+.hello-block { display: flex; align-items: center; gap: 14px; }
+.profile-face, .top-face, .photo-face, .session-face {
+  display: inline-flex; align-items: center; justify-content: center; overflow: hidden;
+  border-radius: 50%; background: #18213b; color: #fff; font-weight: 800; flex: 0 0 auto;
+}
+.profile-face { width: 64px; height: 64px; font-size: 20px; box-shadow: 0 0 0 3px #fff, 0 0 0 5px #26d4ea; }
+.top-face { width: 42px; height: 42px; font-size: 13px; box-shadow: 0 0 0 2px #fff, 0 0 0 4px var(--c, #26d4ea); }
+.photo-face { width: 72px; height: 72px; font-size: 20px; }
+.session-face { width: 28px; height: 28px; font-size: 10px; text-transform: none; letter-spacing: 0; color: #fff; background: #243256; }
+.profile-face img, .top-face img, .photo-face img, .session-face img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.face-empty { background: #18213b; }
+.photo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+.photo-card { border: 1px solid var(--filet); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: #fff; }
+.photo-card button { border: 0; background: transparent; padding: 0; border-radius: 50%; }
+.photo-card b { color: var(--navy); font-size: 14px; }
+.photo-card span { color: var(--muted); font-size: 11px; word-break: break-all; }
+.role { align-items: center; }
+
+body.role-saisie #prep-work input,
+body.role-saisie #prep-work button#save-prep,
+body.role-saisie #lead1,
+body.role-saisie #lead2,
+body.role-saisie [data-check],
+body.role-saisie #households { pointer-events: none; }
+
+.admin-fold { margin-top: 12px; }
+.admin-fold > summary {
+  cursor: pointer; font-weight: 800; color: var(--navy); font-size: 18px;
+  list-style: none; display: flex; align-items: center; justify-content: space-between;
+}
+.admin-fold > summary::-webkit-details-marker { display: none; }
+.admin-fold > summary::after { content: "›"; color: var(--muted); font-size: 22px; }
+.admin-fold[open] > summary { margin-bottom: 12px; }
+.admin-fold[open] > summary::after { content: "⌄"; }
+
   </style>
 </head>
 <body>
 <div class="app"><aside class="side">
-    <div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div>
+    <div class="brand"><img class="brand-logo" src="logo.png" alt="ACX Flow"></div>
+    <button type="button" class="nav-toggle" data-nav aria-label="Menu" aria-expanded="false"><span></span><span></span><span></span></button>
     <div class="space"><i></i> Espace AMC</div>
     <nav>
-      <a href="index.html">Tableau de bord</a>
-      <div class="nav-group">
-        <button type="button" data-toggle>Campagne <span class="chev">›</span></button>
-        <div class="sub"><div><a href="collecte.html">Collecte</a><a href="preparation.html">Préparation</a><a href="transport.html">Transport</a><a href="distribution.html">Distribution</a></div></div>
+      <a href="index.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg></span>Tableau de bord</a>
+      <div class="nav-group open">
+        <button type="button" data-toggle><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-1.5 3.5L16 11H5"/></svg></span>Campagne <span class="chev">›</span></button>
+        <div class="sub"><div><a href="collecte.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8l9-4 9 4-9 4-9-4z"/><path d="M3 8v8l9 4 9-4V8"/><path d="M12 12v8"/></svg></span>Collecte</a><a href="preparation.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 21V4"/><path d="M5 4h11l-1.5 3.5L16 11H5"/></svg></span>Préparation</a><a href="transport.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7h11v8H3z"/><path d="M14 10h4l3 3v2h-7"/><circle cx="7" cy="18" r="1.6"/><circle cx="17" cy="18" r="1.6"/></svg></span>Transport</a><a href="distribution.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11l8-7 8 7"/><path d="M6 10v9h12v-9"/></svg></span>Distribution</a></div></div>
       </div>
-      <a href="classement.html" class="on">Classement</a>
-      <a href="communiques.html">Communiqués</a>
+      <a href="classement.html" class="on"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 4h8v6a4 4 0 0 1-8 0z"/><path d="M15 6h3a2 2 0 0 1 0 4h-3"/><path d="M8 20h8"/><path d="M12 14v6"/></svg></span>Classement</a>
+      <a href="communiques.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 6h14v9H8l-3 3z"/></svg></span>Communiqués</a>
+      <a href="administration.html"><span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="3"/><path d="M5 19c1.2-3 3.4-4.5 7-4.5s5.8 1.5 7 4.5"/></svg></span>Administration</a>
     </nav>
-    <div class="role" aria-label="Choisir la vue">
-      <span>Vue</span>
-      <button type="button" data-role="admin">Admin</button>
-      <button type="button" data-role="membre">Membre</button>
+    <div class="role" aria-label="Session">
+      <span class="session-face" data-session-face></span>
+      <span class="session-who" data-who></span>
+      <button type="button" data-logout>Quitter</button>
     </div>
     <div class="foot">Caravane humanitaire · 11e édition<br>Douar Ilissi · 26-27 déc. 2026</div>
-  </aside><main class="main">
-  <div class="kicker"><i></i> À partager</div>
-  <h1>Classement</h1>
-  <p class="lead">Une carte par groupe, comme les visuels déjà envoyés, dans le style Flow. À capturer pour le groupe de l'association. Le texte se copie sans image.</p>
-  <div class="row noprint" style="margin-bottom:14px">
-    <button class="btn" type="button" id="copy-all">Copier le résumé des 4 groupes</button>
-    <button class="ghost" type="button" onclick="window.print()">Imprimer ou PDF</button>
+  </aside><main class="main"><div class="rank-page">
+  <div class="rank-head">
+    <div>
+      <div class="kicker"><i></i> Classement</div>
+      <h1>Têtes de groupe</h1>
+      <p class="lead">50 MAD = 1 point. 10 vêtements = 1 point. 5 livres = 1 point. Couvertures : par personne, 3 points chacune pour les 3 premières, puis 4 points par couverture à partir de la 4e. 1er et 2e panier : 3 points chacun, puis 4 points. Panier 2 : 2 points chacun. Tri : 5 points. Déplacement : 1 point.</p>
+    </div>
+    <div class="extracts noprint">
+      <button class="extract extract-report" type="button" id="pdf-report">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 4v11"/><path d="M7 11l5 5 5-5"/><path d="M5 20h14"/></svg>
+        Rapport PDF
+      </button>
+      <button class="extract extract-certs" type="button" id="pdf-certs">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M7 3h8l4 4v14H7z"/><path d="M15 3v5h5"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+        Attestations
+      </button>
+    </div>
   </div>
+  <p class="note" id="pdf-msg"></p>
+  <section class="assoc">
+    <div class="brand-chip"><img src="logo.png" alt="ACX Flow"></div>
+    <div>
+      <b>Association Morocco's Creativity</b>
+      <div class="assoc-meta">Caravane humanitaire, 11e édition · Douar Ilissi, région d'Azilal<br>26 et 27 décembre 2026<br>support@acx.ma · flow.acx.ma · +212 634 232 006</div>
+    </div>
+  </section>
+  <div class="stats" id="sums"></div>
+  <section class="podium" id="tops"></section>
+  <h2 class="section-label">Dans chaque groupe</h2>
   <div class="share-grid" id="cards"></div>
-  <p class="note" id="copied"></p>
-<button class="btn" onclick="fetch('/api/session', {method: 'DELETE', credentials: 'same-origin'}).then(() => location.replace('login.html'))">Quitter</button>
+</div>
 </main></div>
+<noscript><p style="padding:24px;font-family:sans-serif">Activez JavaScript pour entrer dans l’espace AMC.</p></noscript>
 <script>
 (function () {
-  const KEY = 'flow-amc-demo-v1';
+  const KEY = 'flow-amc-demo-v2';
   const ITEMS = [
     { id: 'pantalons', label: 'Pantalons' },
     { id: 'pulls', label: 'Pulls en laine' },
@@ -310,19 +579,42 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     { id: 'jackets', label: 'Jackets' },
     { id: 'manteaux', label: 'Manteaux' },
     { id: 'chales', label: 'Châles' },
-    { id: 'argent', label: 'Dons', money: true }
+    { id: 'couverture', label: 'Couverture' },
+    { id: 'livres', label: 'Livres' },
+    { id: 'argent', label: 'Dons', money: true },
+    { id: 'paniers', label: 'Paniers', activity: true },
+    { id: 'paniers2', label: 'Panier 2', activity: true },
+    { id: 'tri', label: 'Tri', activity: true },
+    { id: 'deplacement', label: 'Déplacement', activity: true }
   ];
+  const ITEM_SCOPE = {
+    'mohamedyahyajbir@gmail.com': { deny: ['livres'] },
+    'marouaabid1607@gmail.com': { allow: ['livres'] }
+  };
+  function visibleItems() {
+    const email = String((session && session.email) || '').toLowerCase();
+    if (session && Array.isArray(session.items)) return ITEMS.filter((it) => session.items.indexOf(it.id) >= 0);
+    const scope = ITEM_SCOPE[email];
+    if (!scope) return ITEMS;
+    if (scope.allow) return ITEMS.filter((it) => scope.allow.indexOf(it.id) >= 0);
+    if (scope.deny) return ITEMS.filter((it) => scope.deny.indexOf(it.id) < 0);
+    return ITEMS;
+  }
+  function itemAllowed(id) {
+    return visibleItems().some((it) => it.id === id);
+  }
   const GROUPS = [
     { id: 'A', label: 'Groupe A', color: '#0b1330', members: [['safaa', 'Safaa'], ['yahya', 'Yahya'], ['nour', 'Nour'], ['fatiha', 'Fatiha'], ['badr', 'Badr'], ['nadia', 'Nadia']] },
     { id: 'B', label: 'Groupe B', color: '#0aa8bd', members: [['zineb', 'Zineb'], ['hamza', 'Hamza'], ['aicha', 'Aicha'], ['yusur', 'Yusur'], ['salma', 'Salma'], ['moncef', 'Moncef']] },
     { id: 'C', label: 'Groupe C', color: '#c9842a', members: [['yassir', 'Yassir'], ['bouchra', 'Bouchra'], ['zakaria', 'Zakaria'], ['mouhcine', 'Mouhcine'], ['maroua', 'Maroua'], ['wissal', 'Wissal']] },
-    { id: 'D', label: 'Groupe D', color: '#3c5a8a', members: [['bouchra', 'Bouchra'], ['hasnaa', 'Hasnaa'], ['ilyass', 'Ilyass'], ['mohamed', 'Mohamed'], ['ahmed', 'Ahmed'], ['malak', 'Malak']] }
+    { id: 'D', label: 'Groupe D', color: '#3c5a8a', members: [['bouchra', 'Bouchra'], ['hasnaa', 'Hasnaa'], ['ilyass', 'Ilyass'], ['mohamed', 'Mohamed'], ['ahmed', 'Ahmed'], ['malak', 'Malak']] },
+    { id: 'E', label: 'Groupe E', color: '#873cf4', members: [['ashraf', 'Ashraf'], ['chaymaa', 'Chaymaa'], ['salma_harama', 'Salma Harama'], ['ali_bousfiha', 'Ali Bousfiha']] }
   ];
   const DEFAULT_TARGETS = {
     pantalons: 120, pulls: 120, pyjamas: 80, peignoirs: 40, djellaba_f: 40,
-    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, argent: 20000
+    djellaba_h: 40, jackets: 60, manteaux: 48, chales: 80, couverture: 0, livres: 0, argent: 20000, paniers: 0, paniers2: 0, tri: 0, deplacement: 0
   };
-  const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31 };
+  const RATES = { A: 0.58, B: 0.46, C: 0.72, D: 0.31, E: 0.44 };
   const WEIGHTS = [1.35, 1.15, 0.95, 0.8, 0.62, 0.38];
 
   function memberName(groupId, memberId) {
@@ -331,9 +623,28 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     return m ? m[1] : '—';
   }
   function itemOf(id) { return ITEMS.find((x) => x.id === id); }
-  function fmt(n) { return new Intl.NumberFormat('fr-FR').format(Math.round(Number(n) || 0)); }
+  function fmt(n) { return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 2 }).format(Number(n) || 0); }
   function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
-  function pts(pieces, money) { return pieces + Math.floor(money / 50); }
+  function panierPoints(n) {
+    const q = Math.max(0, Number(n) || 0);
+    return Math.min(q, 2) * 3 + Math.max(0, q - 2) * 4;
+  }
+  function couverturePoints(n) {
+    const q = Math.max(0, Number(n) || 0);
+    return Math.min(q, 3) * 3 + Math.max(0, q - 3) * 4;
+  }
+  function pts(row, money) {
+    const clothes = row && typeof row === "object" ? Number(row.clothes) || 0 : Number(row) || 0;
+    const books = row && typeof row === "object" ? Number(row.books) || 0 : 0;
+    const covers = row && typeof row === "object" ? Number(row.couverture) || 0 : 0;
+    const couvertureScore = row && typeof row === "object" && row.couvertureScore != null ? Number(row.couvertureScore) || 0 : couverturePoints(covers);
+    const cash = row && typeof row === "object" ? Number(row.money) || 0 : Number(money) || 0;
+    const baskets = row && typeof row === "object" && row.panierScore != null ? Number(row.panierScore) : panierPoints(row && row.paniers);
+    const baskets2 = row && typeof row === "object" ? Number(row.paniers2) || 0 : 0;
+    const tri = row && typeof row === "object" ? Number(row.tri) || 0 : 0;
+    const move = row && typeof row === "object" ? Number(row.deplacement) || 0 : 0;
+    return clothes / 10 + books / 5 + couvertureScore + cash / 50 + baskets + baskets2 * 2 + tri * 5 + move;
+  }
   function pct(n, d) { return d > 0 ? Math.max(0, Math.round((n / d) * 100)) : 0; }
   function daysLeft() {
     const end = new Date(2026, 11, 26);
@@ -350,7 +661,7 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
       g.members.forEach((m, i) => {
         const share = WEIGHTS[i] / wsum;
         ITEMS.forEach((it) => {
-          const slice = DEFAULT_TARGETS[it.id] / 4;
+          const slice = DEFAULT_TARGETS[it.id] / GROUPS.length;
           const qty = Math.round(slice * RATES[g.id] * share);
           if (!qty) return;
           entries.push({
@@ -371,7 +682,7 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
 
   function fresh(demo) {
     return {
-      v: 1,
+      v: 2,
       targets: Object.assign({}, DEFAULT_TARGETS),
       entries: demo ? seedEntries() : [],
       prep: {},
@@ -384,18 +695,18 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
   function load() {
     try {
       const raw = localStorage.getItem(KEY);
-      if (!raw) return fresh(true);
+      if (!raw) return fresh(false);
       const s = JSON.parse(raw);
-      if (!s || s.v !== 1) return fresh(true);
+      if (!s || s.v !== 2) return fresh(false);
       s.targets = Object.assign({}, DEFAULT_TARGETS, s.targets || {});
-      s.entries = Array.isArray(s.entries) ? s.entries : [];
+      s.entries = (Array.isArray(s.entries) ? s.entries : []).filter((e) => !e.demo);
       s.prep = s.prep || {};
       s.transport = Object.assign({ charge: false, depart: false, azilal: false, ilissi: false, lead1: '', lead2: '' }, s.transport || {});
       s.distribution = Object.assign({ households: 0, closed: false, lines: {} }, s.distribution || {});
       if (!Array.isArray(s.notices)) s.notices = defaultNotices();
       return s;
     } catch (e) {
-      return fresh(true);
+      return fresh(false);
     }
   }
   function save(s) { localStorage.setItem(KEY, JSON.stringify(s)); }
@@ -407,11 +718,13 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     const byMember = {};
     const byItem = {};
     GROUPS.forEach((g) => {
-      byGroup[g.id] = { pieces: 0, money: 0, items: {} };
+      byGroup[g.id] = { pieces: 0, clothes: 0, books: 0, couverture: 0, couvertureScore: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, items: {} };
       byMember[g.id] = {};
-      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, money: 0, name: m[1] }; });
+      g.members.forEach((m) => { byMember[g.id][m[0]] = { pieces: 0, clothes: 0, books: 0, couverture: 0, paniers: 0, paniers2: 0, tri: 0, deplacement: 0, money: 0, name: m[1] }; });
     });
     ITEMS.forEach((it) => { byItem[it.id] = 0; });
+    const panierQty = {};
+    const couvertureQty = {};
     s.entries.forEach((e) => {
       if (!byGroup[e.group] || byItem[e.item] == null) return;
       const q = Number(e.qty) || 0;
@@ -419,25 +732,56 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
         byGroup[e.group].money += q;
         byItem.argent += q;
         if (byMember[e.group][e.member]) byMember[e.group][e.member].money += q;
+      } else if (e.item === 'paniers' || e.item === 'paniers2' || e.item === 'tri' || e.item === 'deplacement') {
+        byGroup[e.group][e.item] += q;
+        byGroup[e.group].items[e.item] = (byGroup[e.group].items[e.item] || 0) + q;
+        byItem[e.item] += q;
+        if (byMember[e.group][e.member]) byMember[e.group][e.member][e.item] += q;
+        if (e.item === 'paniers') panierQty[e.group + '|' + e.member] = (panierQty[e.group + '|' + e.member] || 0) + q;
+      } else if (e.item === 'couverture') {
+        byGroup[e.group].couverture += q;
+        byGroup[e.group].pieces += q;
+        byGroup[e.group].items.couverture = (byGroup[e.group].items.couverture || 0) + q;
+        byItem.couverture += q;
+        if (byMember[e.group][e.member]) {
+          byMember[e.group][e.member].couverture += q;
+          byMember[e.group][e.member].pieces += q;
+        }
+        const key = e.group + '|' + e.member;
+        couvertureQty[key] = (couvertureQty[key] || 0) + q;
       } else {
+        const kind = e.item === 'livres' ? 'books' : 'clothes';
+        byGroup[e.group][kind] += q;
         byGroup[e.group].pieces += q;
         byGroup[e.group].items[e.item] = (byGroup[e.group].items[e.item] || 0) + q;
         byItem[e.item] += q;
-        if (byMember[e.group][e.member]) byMember[e.group][e.member].pieces += q;
+        if (byMember[e.group][e.member]) {
+          byMember[e.group][e.member][kind] += q;
+          byMember[e.group][e.member].pieces += q;
+        }
       }
     });
-    const pieceTarget = ITEMS.filter((it) => !it.money).reduce((sum, it) => sum + (Number(s.targets[it.id]) || 0), 0);
-    const pieces = ITEMS.filter((it) => !it.money).reduce((sum, it) => sum + byItem[it.id], 0);
+    Object.keys(panierQty).forEach((key) => {
+      const group = key.split('|')[0];
+      if (byGroup[group]) byGroup[group].panierScore = (byGroup[group].panierScore || 0) + panierPoints(panierQty[key]);
+    });
+    Object.keys(couvertureQty).forEach((key) => {
+      const group = key.split('|')[0];
+      if (byGroup[group]) byGroup[group].couvertureScore += couverturePoints(couvertureQty[key]);
+    });
+    const pieceTarget = ITEMS.filter((it) => !it.money && !it.activity).reduce((sum, it) => sum + (Number(s.targets[it.id]) || 0), 0);
+    const pieces = ITEMS.filter((it) => !it.money && !it.activity).reduce((sum, it) => sum + byItem[it.id], 0);
     const money = byItem.argent;
     const moneyTarget = Number(s.targets.argent) || 0;
     const ranked = GROUPS.map((g) => {
       const row = byGroup[g.id];
-      return { id: g.id, label: g.label, color: g.color, pieces: row.pieces, money: row.money, score: pts(row.pieces, row.money) };
+      return { id: g.id, label: g.label, color: g.color, pieces: row.pieces, money: row.money, score: pts(row) };
     }).sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
     return { byGroup, byMember, byItem, pieces, pieceTarget, money, moneyTarget, ranked };
   }
 
   function addEntry(group, member, item, qty) {
+    if (role() !== 'admin' && role() !== 'saisie') return load();
     const s = load();
     const q = Number(qty);
     if (!group || !member || !item || !q) return s;
@@ -446,6 +790,7 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     return s;
   }
   function undo() {
+    if (role() !== 'admin' && role() !== 'saisie') return load();
     const s = load();
     for (let i = s.entries.length - 1; i >= 0; i -= 1) {
       if (!s.entries[i].demo) { s.entries.splice(i, 1); break; }
@@ -454,31 +799,37 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     return s;
   }
   function setTarget(id, qty) {
+    if (role() !== 'admin') return load();
     const s = load();
     s.targets[id] = Math.max(0, Number(qty) || 0);
     save(s);
     return s;
   }
   function setPrep(id, field, qty) {
+    if (role() !== 'admin') return load();
     const s = load();
     s.prep[id] = s.prep[id] || {};
-    s.prep[id][field] = Math.max(0, Number(qty) || 0);
+    if (field === 'note') s.prep[id].note = String(qty || '').slice(0, 240);
+    else s.prep[id][field] = Math.max(0, Number(String(qty).replace(',', '.')) || 0);
     save(s);
     return s;
   }
   function setTransport(patch) {
+    if (role() !== 'admin') return load();
     const s = load();
     Object.assign(s.transport, patch);
     save(s);
     return s;
   }
   function setDistribution(patch) {
+    if (role() !== 'admin') return load();
     const s = load();
     Object.assign(s.distribution, patch);
     save(s);
     return s;
   }
   function setDistLine(id, field, qty) {
+    if (role() !== 'admin') return load();
     const s = load();
     s.distribution.lines[id] = s.distribution.lines[id] || {};
     s.distribution.lines[id][field] = Math.max(0, Number(qty) || 0);
@@ -488,19 +839,52 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
 
   function defaultNotices() {
     return [
-      { id: 'n1', title: 'Collecte ouverte', body: 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, et les dons.', at: '2026-10-24T09:00:00', author: 'Admin' },
+      { id: 'n1', title: 'Collecte ouverte', body: 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, couvertures et dons.', at: '2026-10-24T09:00:00', author: 'Admin' },
       { id: 'n2', title: 'Rappel de la caravane', body: 'Douar Ilissi, région d’Azilal, les 26 et 27 décembre 2026. Merci de transmettre les quantités au poste de saisie.', at: '2026-10-26T18:00:00', author: 'Admin' }
     ];
   }
-  function role() { return localStorage.getItem('flow-amc-role') || 'admin'; }
-  function setRole(next) { localStorage.setItem('flow-amc-role', next === 'membre' ? 'membre' : 'admin'); }
+  let session = null;
+  const readyWaiters = [];
+  let booted = false;
+  function profile() {
+    if (!session) return null;
+    return { full_name: session.name || '', email: session.email || '', role: role() };
+  }
+  function bindNav() {
+    const side = document.querySelector('.side');
+    const btn = document.querySelector('[data-nav]');
+    if (!side || !btn || btn.dataset.bound) return;
+    btn.dataset.bound = '1';
+    btn.addEventListener('click', () => {
+      const open = side.classList.toggle('is-open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      document.body.classList.toggle('nav-open', open);
+    });
+    side.querySelectorAll('nav a').forEach((link) => {
+      link.addEventListener('click', () => {
+        side.classList.remove('is-open');
+        btn.setAttribute('aria-expanded', 'false');
+        document.body.classList.remove('nav-open');
+      });
+    });
+  }
+  function role() {
+    if (session && (session.role === 'admin' || session.role === 'saisie')) return session.role;
+    return 'membre';
+  }
+  function onReady(fn) {
+    if (booted) fn(session);
+    else readyWaiters.push(fn);
+  }
   function addNotice(title, body) {
+    if (role() !== 'admin') return load();
     const s = load();
     s.notices.unshift({ id: 'n' + Date.now(), title: title.trim(), body: body.trim(), at: new Date().toISOString(), author: 'Admin' });
     save(s);
     return s;
   }
   function removeNotice(id) {
+    if (role() !== 'admin') return load();
     const s = load();
     s.notices = s.notices.filter((n) => n.id !== id);
     save(s);
@@ -526,11 +910,11 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     const g = GROUPS.find((x) => x.id === groupId);
     const lines = g.members.map((m) => {
       const row = st.byMember[g.id][m[0]];
-      return { name: m[1], pieces: row.pieces, money: row.money, score: pts(row.pieces, row.money) };
+      return { name: m[1], pieces: row.pieces, money: row.money, score: pts(row) };
     }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'fr'));
     const head = 'Classement ' + g.label + ' · Caravane AMC · 11e édition';
     const body = lines.map((row, i) => (i + 1) + '. ' + row.name + ' — ' + fmt(row.pieces) + ' pcs · ' + fmt(row.money) + ' MAD · ' + fmt(row.score) + ' pts').join('\n');
-    const done = pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / 4));
+    const done = pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / GROUPS.length));
     return head + '\n' + body + '\nObjectif du groupe : ' + done + ' % des pièces.\nDouar Ilissi · 26-27 déc. 2026';
   }
 
@@ -539,52 +923,803 @@ label { display: grid; gap: 4px; font-size: 12px; font-weight: 750; color: var(-
     if (Number.isNaN(d.getTime())) return '';
     return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
   }
-  document.addEventListener('DOMContentLoaded', () => {
-    const current = role();
-    document.body.classList.add('role-' + current);
-    const toggle = document.querySelector('[data-toggle]');
-    if (toggle) toggle.addEventListener('click', () => toggle.parentElement.classList.toggle('open'));
-    document.querySelectorAll('[data-role]').forEach((btn) => {
-      btn.classList.toggle('on', btn.getAttribute('data-role') === current);
-      btn.addEventListener('click', () => {
-        setRole(btn.getAttribute('data-role'));
-        location.reload();
+  function finish(next) {
+    const cleanRole = next.role === 'admin' || next.role === 'saisie' ? next.role : 'membre';
+    const yassirPages = ['index.html', 'collecte.html', 'preparation.html', 'transport.html', 'distribution.html', 'classement.html', 'communiques.html'];
+    const email = String(next.email || '').toLowerCase();
+    const pages = cleanRole !== 'saisie' ? null : (email === 'yassirkrami01@gmail.com' ? yassirPages : ((Array.isArray(next.pages) && next.pages.length ? next.pages : ['collecte.html', 'communiques.html']).filter((href) => href !== 'administration.html')));
+    session = { email: String(next.email || '').toLowerCase(), name: next.name || '', role: cleanRole, pages: pages, items: Array.isArray(next.items) ? next.items : null };
+    const here = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+    if (pages && pages.indexOf(here) === -1) {
+      location.replace('collecte.html');
+      return;
+    }
+    booted = true;
+    document.documentElement.classList.add('unlocked');
+    document.body.classList.remove('role-admin', 'role-membre', 'role-saisie');
+    document.body.classList.add('role-' + role());
+    const who = document.querySelector('[data-who]');
+    const label = role() === 'admin' ? 'Admin' : (role() === 'saisie' ? 'Saisie' : 'Membre');
+    window.__AMC_PROFILE = { full_name: session.name || '', email: session.email || '', role: role() };
+    if (who) who.textContent = (session.name || session.email) + ' · ' + label;
+    const hello = document.querySelector('[data-hello]');
+    if (hello) {
+      const name = session.name || String(session.email || '').split('@')[0] || 'à vous';
+      hello.innerHTML = 'Bonjour ' + esc(name) + ' <span class="role-pill">' + label + '</span>';
+    }
+    paintSession();
+    if (pages) {
+      document.querySelectorAll('.side a[href]').forEach((link) => {
+        const href = (link.getAttribute('href') || '').split('?')[0];
+        if (pages.indexOf(href) === -1) link.hidden = true;
       });
-    });
+    }
+    const toggle = document.querySelector('[data-toggle]');
+    if (toggle && !toggle.dataset.bound) {
+      toggle.dataset.bound = '1';
+      toggle.addEventListener('click', () => toggle.parentElement.classList.toggle('open'));
+    }
+    const out = document.querySelector('[data-logout]');
+    if (out && !out.dataset.bound) {
+      out.dataset.bound = '1';
+      out.addEventListener('click', logout);
+    }
+    if (role() !== 'admin') {
+      const main = document.querySelector('.main');
+      if (main && !main.querySelector('.consult')) {
+        const note = document.createElement('p');
+        note.className = 'consult';
+        note.textContent = role() === 'saisie'
+          ? 'Saisie ouverte sur la collecte. Les communiqués sont en consultation.'
+          : 'Vue membre. Consultation seulement : les saisies, les objectifs et la publication restent à l’admin.';
+        main.prepend(note);
+      }
+    }
+    readyWaiters.splice(0).forEach((fn) => fn(session));
     requestAnimationFrame(() => document.body.classList.add('ready'));
-  });
+  }
+  async function logout() {
+    try { await fetch('/api/session', { method: 'DELETE', credentials: 'same-origin' }); } catch (err) { /* ignore */ }
+    location.href = 'index.html';
+  }
+  function showGate(prefill) {
+    if (document.querySelector('.gate')) return;
+    const host = document.createElement('main');
+    host.className = 'gate access';
+    host.innerHTML = '<section class="panel"><div class="inner"><div class="brand"><b>ACX Flow</b><span>By <a href="https://acx.ma/">ACX Maroc</a></span></div><div class="kicker" style="margin-top:48px"><i></i> Espace AMC</div><h1>La chaleur humaine,<br><em>au même rythme.</em></h1></div><div class="inner support-line">support@acx.ma · <a href="https://flow.acx.ma/">flow.acx.ma</a> · <a href="tel:+212634232006">+212 634 232 006</a></div></section><section class="access-main"><form class="access-card" id="gate-form"><div class="kicker"><i></i> Connexion</div><h2>Entrer dans l’espace</h2><p class="lead">L’admin ouvre l’administration. Un mail membre autorisé ouvre la consultation. Aucun autre espace ne s’affiche.</p><label>Adresse e-mail<input id="gate-email" type="email" autocomplete="username" required></label><label>Mot de passe<input id="gate-password" type="password" autocomplete="current-password" required></label><p class="gate-error" id="gate-error" role="alert"></p><button class="btn" type="submit">Entrer</button></form></section>';
+    document.body.prepend(host);
+    const emailInput = host.querySelector('#gate-email');
+    if (emailInput && prefill) emailInput.value = prefill;
+    host.querySelector('#gate-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
+      const email = host.querySelector('#gate-email').value.trim().toLowerCase();
+      const password = host.querySelector('#gate-password').value;
+      const err = host.querySelector('#gate-error');
+      const btn = host.querySelector('button');
+      err.textContent = '';
+      btn.disabled = true;
+      btn.textContent = 'Vérification…';
+      try {
+        const res = await fetch('/api/session', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: email, password: password })
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          err.textContent = data.message || 'Accès refusé.';
+          btn.disabled = false;
+          btn.textContent = 'Entrer';
+          return;
+        }
+        host.remove();
+        const url = new URL(location.href);
+        url.searchParams.delete('email');
+        url.searchParams.delete('from');
+        url.searchParams.delete('role');
+        history.replaceState({}, '', url.pathname + (url.search || ''));
+        finish(data);
+      } catch (failure) {
+        err.textContent = 'La vérification ne répond pas. Ouvrez l’espace déployé, pas une copie locale.';
+        btn.disabled = false;
+        btn.textContent = 'Entrer';
+      }
+    });
+  }
+  async function refreshMembers() {
+    try {
+      const res = await fetch('/api/members', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (!Array.isArray(data.members)) return;
+      memberRows = data.members;
+      const by = { A: [], B: [], C: [], D: [], E: [] };
+      data.members.forEach((m) => { if (by[m.group]) by[m.group].push([m.id, m.name]); });
+      GROUPS.forEach((g) => { g.members = by[g.id] || []; });
+    } catch (err) { /* liste locale */ }
+  }
+  let memberRows = [];
+  let photoBook = { access: {}, members: {}, linked: {}, accessList: [], ready: false };
+  function initials(name) {
+    const parts = String(name || '').trim().split(/\s+/).filter(Boolean).slice(0, 2);
+    return (parts.map((part) => part[0]).join('') || '?').toUpperCase();
+  }
+  function accessPhoto(email) {
+    return photoBook.access[String(email || '').toLowerCase()] || '';
+  }
+  function roster() { return memberRows.slice(); }
+  function photoCatalog() { return photoBook; }
+  function memberPhoto(group, slug) {
+    const key = String(group || '') + '-' + String(slug || '');
+    if (photoBook.members[key]) return photoBook.members[key];
+    const email = photoBook.linked[key];
+    return email ? accessPhoto(email) : '';
+  }
+  function paintSession() {
+    if (!session) return;
+    const url = accessPhoto(session.email);
+    const name = session.name || session.email;
+    paintFace(document.querySelector('[data-face]'), url, name);
+    paintFace(document.querySelector('[data-session-face]'), url, name);
+  }
+  function paintFace(el, url, name) {
+    if (!el) return;
+    el.replaceChildren();
+    if (url) {
+      const img = document.createElement('img');
+      img.alt = '';
+      img.src = url;
+      el.appendChild(img);
+    } else {
+      el.textContent = initials(name);
+    }
+  }
+  async function refreshPhotos() {
+    try {
+      const res = await fetch('/api/photos', { credentials: 'same-origin' });
+      if (!res.ok) return;
+      const data = await res.json();
+      photoBook = {
+        access: data.access || {},
+        members: data.members || {},
+        linked: data.linked || {},
+        accessList: data.accessList || [],
+        ready: true
+      };
+    } catch (err) { /* photos locales */ }
+  }
+  async function refreshPrep() {
+    try {
+      const res = await fetch('/api/prep', { credentials: 'same-origin' });
+      if (!res.ok) return load();
+      const data = await res.json();
+      const s = load();
+      const prep = {};
+      (data.lines || []).forEach((line) => {
+        prep[line.item] = { ready: Number(line.ready) || 0, rejected: Number(line.rejected) || 0, note: line.note || '' };
+      });
+      s.prep = prep;
+      s.prepUpdatedAt = data.updatedAt || '';
+      save(s);
+      return s;
+    } catch (err) {
+      return load();
+    }
+  }
+  async function refresh() {
+    try {
+      const res = await fetch('/api/entries', { credentials: 'same-origin' });
+      if (!res.ok) return load();
+      const data = await res.json();
+      const s = load();
+      s.entries = Array.isArray(data.entries) ? data.entries : [];
+      save(s);
+      return s;
+    } catch (err) {
+      return load();
+    }
+  }
+  async function boot() {
+    document.documentElement.classList.add('unlocked');
+    document.body.classList.add('ready');
+    bindNav();
+    const params = new URLSearchParams(location.search);
+    if (params.get('role')) {
+      const url = new URL(location.href);
+      url.searchParams.delete('role');
+      history.replaceState({}, '', url.pathname + (url.search || ''));
+    }
+    try {
+      const res = await fetch('/api/session', { credentials: 'same-origin' });
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.email && (data.role === 'admin' || data.role === 'membre' || data.role === 'saisie')) {
+          const photosPromise = refreshPhotos();
+          await Promise.all([refresh(), refreshMembers(), refreshPrep()]);
+          finish(data);
+          await photosPromise;
+          paintSession();
+          document.dispatchEvent(new Event('amc-photos'));
+          return;
+        }
+      }
+    } catch (err) { /* porte */ }
+    showGate('');
+  }
   window.AMC = {
     ITEMS, GROUPS, DEFAULT_TARGETS, load, save, resetDemo, zero, stats, addEntry, undo,
     setTarget, setPrep, setTransport, setDistribution, setDistLine, shareText, series,
-    addNotice, removeNotice, role, when,
-    memberName, itemOf, fmt, esc, pts, pct, daysLeft
+    addNotice, removeNotice, role, profile, onReady, when, refresh, refreshMembers, refreshPrep, refreshPhotos, memberPhoto, initials, roster, photoCatalog,
+    memberName, itemOf, fmt, esc, pts, couverturePoints, pct, daysLeft, visibleItems, itemAllowed
   };
+  boot();
 })();
 
+AMC.onReady(function () {
+(function (root) {
+  const WIDTHS = {
+    " ": 278, ".": 278, ",": 278, "-": 333, "'": 191, ":": 278, ";": 278, "/": 278,
+    "(": 333, ")": 333, "+": 584, "0": 556, "1": 556, "2": 556, "3": 556, "4": 556,
+    "5": 556, "6": 556, "7": 556, "8": 556, "9": 556,
+    "A": 667, "B": 667, "C": 722, "D": 722, "E": 667, "F": 611, "G": 778, "H": 722, "I": 278, "J": 500,
+    "K": 667, "L": 556, "M": 833, "N": 722, "O": 778, "P": 667, "Q": 778, "R": 722, "S": 667, "T": 611,
+    "U": 722, "V": 667, "W": 944, "X": 667, "Y": 667, "Z": 611,
+    "a": 556, "b": 556, "c": 500, "d": 556, "e": 556, "f": 278, "g": 556, "h": 556, "i": 222, "j": 222,
+    "k": 500, "l": 222, "m": 833, "n": 556, "o": 556, "p": 556, "q": 556, "r": 333, "s": 500, "t": 278,
+    "u": 556, "v": 500, "w": 722, "x": 500, "y": 500, "z": 500
+  };
+  const NAVY = "0.043 0.075 0.188";
+  const INK = "0.094 0.129 0.231";
+  const MUTED = "0.384 0.439 0.541";
+  const CYAN = "0.149 0.831 0.918";
+  const GOLD = "0.788 0.635 0.153";
+  const LINE = "0.894 0.910 0.945";
+  const PAPER = "0.965 0.969 0.984";
 
-const ranks = ['#c9a227', '#d08a3a', '#c4a15a', '#b9a06a', '#1f8a56', '#18213b'];
-function card(groupId) {
+  function ascii(s) {
+    const out = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i) & 255;
+    return out;
+  }
+  function concat(parts) {
+    let n = 0;
+    parts.forEach((p) => { n += p.length; });
+    const out = new Uint8Array(n);
+    let o = 0;
+    parts.forEach((p) => { out.set(p, o); o += p.length; });
+    return out;
+  }
+  function winAnsi(text) {
+    const src = String(text)
+      .replace(/\u2019|\u2018/g, "'")
+      .replace(/\u2013|\u2014/g, "-")
+      .replace(/\u2026/g, "...")
+      .replace(/\u0153/g, "oe")
+      .replace(/\u0152/g, "OE")
+      .replace(/\u00a0/g, " ");
+    const out = [];
+    for (const ch of src) {
+      const c = ch.codePointAt(0);
+      if (c >= 32 && c <= 126) out.push(c);
+      else if (c >= 160 && c <= 255) out.push(c);
+      else out.push(63);
+    }
+    return out;
+  }
+  function pdfString(text) {
+    const bytes = winAnsi(text);
+    const out = [40];
+    bytes.forEach((b) => {
+      if (b === 40 || b === 41 || b === 92) out.push(92, b);
+      else if (b < 32) {
+        const oct = b.toString(8).padStart(3, "0");
+        out.push(92, oct.charCodeAt(0), oct.charCodeAt(1), oct.charCodeAt(2));
+      } else out.push(b);
+    });
+    out.push(41);
+    return out;
+  }
+  function measure(text, size, bold) {
+    let n = 0;
+    winAnsi(text).forEach((b) => {
+      const ch = String.fromCharCode(b);
+      n += WIDTHS[ch] || WIDTHS[ch.toLowerCase()] || 500;
+    });
+    return (n / 1000) * size * (bold ? 1.08 : 1);
+  }
+  function wrap(text, size, width, bold) {
+    const words = String(text).split(/\s+/);
+    const lines = [];
+    let cur = "";
+    words.forEach((word) => {
+      const next = cur ? cur + " " + word : word;
+      if (cur && measure(next, size, bold) > width) {
+        lines.push(cur);
+        cur = word;
+      } else cur = next;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+  function ordinal(n) {
+    return n === 1 ? "1er" : n + "e";
+  }
+  function num(n) {
+    const v = Number(n) || 0;
+    const neg = v < 0;
+    const fixed = (Math.round(Math.abs(v) * 100) / 100).toFixed(2);
+    const parts = fixed.split(".");
+    const whole = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+    const frac = parts[1].replace(/0+$/, "");
+    return (neg ? "-" : "") + whole + (frac ? "," + frac : "");
+  }
+
+  function Doc() {
+    this.parts = [];
+    this.objects = [];
+  }
+  Doc.prototype.add = function (body) {
+    this.objects.push(body);
+    return this.objects.length;
+  };
+  Doc.prototype.bytes = function () {
+    const head = ascii("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+    const chunks = [head];
+    const offsets = [0];
+    let pos = head.length;
+    this.objects.forEach((body, i) => {
+      offsets.push(pos);
+      const chunk = concat([ascii((i + 1) + " 0 obj\n"), body, ascii("\nendobj\n")]);
+      chunks.push(chunk);
+      pos += chunk.length;
+    });
+    const startxref = pos;
+    let xref = "xref\n0 " + (this.objects.length + 1) + "\n0000000000 65535 f \n";
+    for (let i = 1; i < offsets.length; i++) xref += String(offsets[i]).padStart(10, "0") + " 00000 n \n";
+    xref += "trailer\n<< /Size " + (this.objects.length + 1) + " /Root 1 0 R >>\nstartxref\n" + startxref + "\n%%EOF";
+    chunks.push(ascii(xref));
+    return concat(chunks);
+  };
+
+  function streamObject(dict, data) {
+    return concat([ascii(dict + "\nstream\n"), data, ascii("\nendstream")]);
+  }
+  function pageObject(parent, contentId, imageId) {
+    const extra = imageId ? " /XObject << /Im1 " + imageId + " 0 R >>" : "";
+    return ascii("<< /Type /Page /Parent " + parent + " 0 R /MediaBox [0 0 595.28 841.89] /Resources << /Font << /F1 3 0 R /F2 4 0 R >>" + extra + " >> /Contents " + contentId + " 0 R >>");
+  }
+
+  function Painter(image) {
+    this.ops = [];
+    this.image = image || null;
+  }
+  Painter.prototype.cmd = function (s) { this.ops.push(ascii(s + "\n")); };
+  Painter.prototype.fill = function (x, y, w, h, color) {
+    this.cmd(color + " rg\n" + x.toFixed(2) + " " + y.toFixed(2) + " " + w.toFixed(2) + " " + h.toFixed(2) + " re f");
+  };
+  Painter.prototype.stroke = function (x, y, w, h, color, width) {
+    this.cmd(color + " RG\n" + (width || 1).toFixed(2) + " w\n" + x.toFixed(2) + " " + y.toFixed(2) + " " + w.toFixed(2) + " " + h.toFixed(2) + " re S");
+  };
+  Painter.prototype.line = function (x1, y1, x2, y2, color, width) {
+    this.cmd(color + " RG\n" + (width || 0.6).toFixed(2) + " w\n" + x1.toFixed(2) + " " + y1.toFixed(2) + " m " + x2.toFixed(2) + " " + y2.toFixed(2) + " l S");
+  };
+  Painter.prototype.text = function (x, y, text, size, bold, color) {
+    const font = bold ? "F2" : "F1";
+    this.ops.push(ascii("BT\n/" + font + " " + size + " Tf\n" + color + " rg\n" + x.toFixed(2) + " " + y.toFixed(2) + " Td\n"));
+    this.ops.push(pdfString(text));
+    this.ops.push(ascii(" Tj\nET\n"));
+  };
+  Painter.prototype.center = function (cx, y, text, size, bold, color) {
+    this.text(cx - measure(text, size, bold) / 2, y, text, size, bold, color);
+  };
+  Painter.prototype.right = function (rx, y, text, size, bold, color) {
+    this.text(rx - measure(text, size, bold), y, text, size, bold, color);
+  };
+  Painter.prototype.paragraph = function (x, y, text, size, width, leading, color) {
+    const lines = wrap(text, size, width, false);
+    lines.forEach((line, i) => this.text(x, y - i * leading, line, size, false, color));
+    return y - lines.length * leading;
+  };
+  Painter.prototype.logo = function (x, y, w) {
+    if (!this.image) return;
+    const h = w * (this.image.h / this.image.w);
+    this.cmd("q\n" + w.toFixed(2) + " 0 0 " + h.toFixed(2) + " " + x.toFixed(2) + " " + y.toFixed(2) + " cm\n/Im1 Do\nQ");
+    return h;
+  };
+  Painter.prototype.bytes = function () { return concat(this.ops); };
+
+  function finish(pages, image) {
+    const doc = new Doc();
+    doc.add(ascii("<< /Type /Catalog /Pages 2 0 R >>"));
+    doc.add(ascii("<< /Type /Pages /Count 0 /Kids [] >>"));
+    const font1 = doc.add(ascii("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>"));
+    const font2 = doc.add(ascii("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>"));
+    if (font1 !== 3 || font2 !== 4) throw new Error("font ids");
+    let imageId = 0;
+    if (image && image.bytes) {
+      imageId = doc.add(streamObject("<< /Type /XObject /Subtype /Image /Width " + image.w + " /Height " + image.h + " /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length " + image.bytes.length + " >>", image.bytes));
+    }
+    const pageIds = [];
+    const contentIds = pages.map((page) => doc.add(streamObject("<< /Length " + page.length + " >>", page)));
+    const pagesId = 2;
+    contentIds.forEach((id) => pageIds.push(doc.add(pageObject(pagesId, id, imageId))));
+    doc.objects[1] = ascii("<< /Type /Pages /Count " + pageIds.length + " /Kids [" + pageIds.map((id) => id + " 0 R").join(" ") + "] >>");
+    return doc.bytes();
+  }
+
+  function headerBand(p, title) {
+    p.fill(0, 770, 595.28, 72, NAVY);
+    p.fill(0, 766, 595.28, 4, CYAN);
+    if (p.image) p.logo(36, 786, 148);
+    else p.text(36, 796, "ACX Flow", 16, true, "1 1 1");
+    p.right(560, 804, "Espace AMC", 9, true, CYAN);
+    p.right(560, 788, title, 8, false, "0.84 0.89 0.95");
+  }
+
+  function assocBlock(p, y) {
+    p.text(40, y, "Association Morocco's Creativity", 12, true, NAVY);
+    p.text(40, y - 16, "Caravane humanitaire, 11e édition", 10, false, INK);
+    p.text(40, y - 30, "Douar Ilissi, région d'Azilal  ·  26 et 27 décembre 2026", 10, false, INK);
+    p.text(40, y - 46, "support@acx.ma  ·  flow.acx.ma  ·  +212 634 232 006", 9, false, MUTED);
+    return y - 82;
+  }
+
+  function reportPdf(model, image) {
+    const pages = [];
+    let p = new Painter(image);
+    let y = 742;
+    function newPage(continued) {
+      if (p) pages.push(p.bytes());
+      p = new Painter(image);
+      if (continued) {
+        p.fill(0, 806, 595.28, 36, NAVY);
+        p.text(36, 820, "ACX Flow  ·  Espace AMC", 9, true, "1 1 1");
+        p.right(560, 820, "Rapport de classement", 8, false, CYAN);
+        y = 784;
+      } else {
+        headerBand(p, "Rapport de classement");
+        y = assocBlock(p, 742);
+      }
+    }
+    function need(h) {
+      if (y - h < 48) newPage(true);
+    }
+    newPage(false);
+    pages.pop();
+    p.text(40, y, "Rapport de classement", 18, true, NAVY);
+    p.text(40, y - 18, "Extrait le " + model.dateLabel + " depuis ACX Flow", 9, false, MUTED);
+    p.text(40, y - 32, "50 MAD = 1 pt · 10 vêtements = 1 pt · 5 livres = 1 pt.", 8, false, MUTED);
+    p.text(40, y - 42, "Couvertures, par personne : 3 pts chacune pour les 3 premières, puis 4 pts dès la 4e.", 8, false, MUTED);
+    p.text(40, y - 52, "1er et 2e panier : 3 pts chacun, puis 4 · Panier 2 : 2 pts · Tri : 5 pts · Déplacement : 1 pt.", 8, false, MUTED);
+    y -= 68;
+    p.fill(40, y - 8, 515, 22, PAPER);
+    p.text(48, y, "Cinq groupes", 9, true, NAVY);
+    p.text(150, y, num(model.pieces) + " pièces", 9, false, INK);
+    p.text(270, y, num(model.money) + " MAD", 9, false, INK);
+    p.text(400, y, num(model.points) + " points", 9, false, INK);
+    y -= 34;
+    need(28);
+    p.text(40, y, "Classement des groupes", 12, true, NAVY);
+    y -= 18;
+    p.fill(40, y - 6, 515, 18, NAVY);
+    p.text(48, y, "Rang", 8, true, "1 1 1");
+    p.text(88, y, "Groupe", 8, true, "1 1 1");
+    p.text(168, y, "Tête de groupe", 8, true, "1 1 1");
+    p.right(390, y, "Pièces", 8, true, "1 1 1");
+    p.right(455, y, "Dons", 8, true, "1 1 1");
+    p.right(508, y, "Points", 8, true, "1 1 1");
+    p.right(548, y, "Part", 8, true, "1 1 1");
+    y -= 20;
+    model.groups.forEach((g, i) => {
+      need(18);
+      if (i % 2 === 0) p.fill(40, y - 5, 515, 16, PAPER);
+      p.text(48, y, ordinal(g.rank), 9, true, NAVY);
+      p.text(88, y, g.label, 9, true, INK);
+      p.text(168, y, g.leader.name, 9, false, INK);
+      p.right(390, y, num(g.pieces), 9, false, INK);
+      p.right(455, y, num(g.money), 9, false, INK);
+      p.right(508, y, num(g.score), 9, true, NAVY);
+      p.right(548, y, g.percent + " %", 9, false, MUTED);
+      y -= 16;
+    });
+    y -= 16;
+    model.groups.forEach((g) => {
+      need(128);
+      p.text(40, y, g.label + "  ·  " + ordinal(g.rank) + " au classement", 12, true, NAVY);
+      p.text(280, y, g.percent + " % de la part du groupe", 9, false, MUTED);
+      y -= 8;
+      p.line(40, y, 555, y, LINE, 0.6);
+      y -= 16;
+      g.members.forEach((m) => {
+        need(16);
+        p.text(48, y, ordinal(m.rank), 9, true, m.rank === 1 ? GOLD : MUTED);
+        p.text(88, y, m.name, 9, m.rank === 1, INK);
+        p.right(390, y, num(m.pieces) + " pcs", 9, false, INK);
+        p.right(470, y, num(m.money) + " MAD", 9, false, INK);
+        p.right(548, y, num(m.score) + " pts", 9, true, NAVY);
+        y -= 14;
+      });
+      y -= 8;
+    });
+    need(28);
+    p.paragraph(40, y, "Document établi par ACX Flow pour l'Association Morocco's Creativity. Les chiffres sont ceux des saisies enregistrées à la date d'extraction. Ils peuvent être extraits à nouveau à la fin de la collecte.", 8, 515, 11, MUTED);
+    pages.push(p.bytes());
+    pages.forEach((bytes, i) => {
+      const painter = bytes;
+      const mark = ascii("BT\n/F1 8 Tf\n" + MUTED + " rg\n520 28 Td\n");
+      const label = pdfString("Page " + (i + 1) + " / " + pages.length);
+      pages[i] = concat([painter, mark, label, ascii(" Tj\nET\n")]);
+    });
+    return finish(pages, image);
+  }
+
+  function certificatePdf(person, model, image) {
+    const p = new Painter(image);
+    p.stroke(18, 18, 559.28, 805.89, NAVY, 1.4);
+    p.stroke(24, 24, 547.28, 793.89, GOLD, 0.7);
+    p.fill(36, 736, 523.28, 58, NAVY);
+    p.fill(36, 732, 523.28, 3, CYAN);
+    if (p.image) p.logo(48, 750, 132);
+    else p.text(48, 758, "ACX Flow", 14, true, "1 1 1");
+    p.right(544, 766, "Espace AMC", 8, true, CYAN);
+    p.right(544, 752, "Attestation", 8, false, "0.84 0.89 0.95");
+    p.center(297, 702, "Association Morocco's Creativity", 12, true, NAVY);
+    p.center(297, 686, "Caravane humanitaire, 11e édition", 9, false, INK);
+    p.center(297, 672, "Douar Ilissi, région d'Azilal  ·  26 et 27 décembre 2026", 9, false, MUTED);
+    p.line(120, 656, 475, 656, GOLD, 0.8);
+    p.center(297, 628, "ATTESTATION DE PERFORMANCE", 13, true, NAVY);
+    p.center(297, 600, "L'association atteste que", 11, false, MUTED);
+    p.fill(70, 536, 455, 48, PAPER);
+    p.center(297, 554, person.name, 22, true, NAVY);
+    const quiet = person.score === 0 && person.groupQuiet;
+    const lead = quiet
+      ? person.name + " est la tête de liste affichée du " + person.groupLabel + ". Aucune saisie n'est encore enregistrée pour ce groupe à la date de ce document."
+      : person.name + " est en tête du " + person.groupLabel + ", " + ordinal(person.groupRank) + " au classement général, d'après les saisies enregistrées dans ACX Flow.";
+    let y = p.paragraph(70, 508, lead, 11, 455, 15, INK);
+    y -= 8;
+    const boxes = [
+      ["Points", num(person.score)],
+      ["Pièces", num(person.pieces)],
+      ["Dons, MAD", num(person.money)]
+    ];
+    boxes.forEach((box, i) => {
+      const x = 70 + i * 154;
+      p.stroke(x, y - 46, 146, 52, LINE, 0.8);
+      p.text(x + 12, y - 8, box[0], 8, false, MUTED);
+      p.text(x + 12, y - 30, box[1], 16, true, NAVY);
+    });
+    y -= 70;
+    p.text(70, y, "Rang dans le groupe : 1er", 10, false, INK);
+    p.text(300, y, "Part du groupe : " + person.groupPercent + " %", 10, false, INK);
+    y -= 16;
+    p.text(70, y, "Points du groupe : " + num(person.groupScore), 10, false, INK);
+    y -= 22;
+    p.text(70, y, "Référence  " + person.ref, 9, true, NAVY);
+    p.text(70, y - 14, "Extrait le " + model.dateLabel, 9, false, MUTED);
+    p.line(70, 118, 250, 118, NAVY, 0.7);
+    p.text(70, 104, "Pour l'association", 8, false, MUTED);
+    p.text(70, 90, "Association Morocco's Creativity", 10, true, NAVY);
+    p.line(48, 74, 547, 74, LINE, 0.6);
+    p.center(297, 60, "ACX Flow  ·  flow.acx.ma  ·  flow@acx.ma", 8, true, NAVY);
+    p.center(297, 48, "ACX Maroc  ·  acx.ma  ·  contact@acx.ma", 8, false, INK);
+    p.center(297, 36, "+212 634 232 006", 8, false, MUTED);
+    return finish([p.bytes()], image);
+  }
+
+  function crc32(bytes) {
+    let c = 0xffffffff;
+    for (let i = 0; i < bytes.length; i++) {
+      c ^= bytes[i];
+      for (let k = 0; k < 8; k++) c = (c >>> 1) ^ (0xedb88320 & -(c & 1));
+    }
+    return (~c) >>> 0;
+  }
+  function u16(n) { return ascii(String.fromCharCode(n & 255, (n >> 8) & 255)); }
+  function u32(n) { return ascii(String.fromCharCode(n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >> 24) & 255)); }
+  function zipFiles(files) {
+    const locals = [];
+    const centrals = [];
+    let offset = 0;
+    files.forEach((file) => {
+      const name = ascii(file.name);
+      const data = file.bytes;
+      const crc = crc32(data);
+      const local = concat([
+        u32(0x04034b50), u16(20), u16(0), u16(0), u16(0), u16(0),
+        u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0),
+        name, data
+      ]);
+      const central = concat([
+        u32(0x02014b50), u16(20), u16(20), u16(0), u16(0), u16(0), u16(0),
+        u32(crc), u32(data.length), u32(data.length), u16(name.length), u16(0), u16(0),
+        u16(0), u16(0), u32(0), u32(offset), name
+      ]);
+      locals.push(local);
+      centrals.push(central);
+      offset += local.length;
+    });
+    const centralStart = offset;
+    const centralBytes = concat(centrals);
+    const end = concat([
+      u32(0x06054b50), u16(0), u16(0), u16(files.length), u16(files.length),
+      u32(centralBytes.length), u32(centralStart), u16(0)
+    ]);
+    return concat(locals.concat(centrals, [end]));
+  }
+
+  function certificatesZip(model, image) {
+    const files = model.groups.map((g) => {
+      const person = {
+        name: g.leader.name,
+        slug: g.leader.slug,
+        score: g.leader.score,
+        pieces: g.leader.pieces,
+        money: g.leader.money,
+        groupLabel: g.label,
+        groupRank: g.rank,
+        groupPercent: g.percent,
+        groupScore: g.score,
+        groupQuiet: g.members.every((m) => !m.score),
+        ref: "AMC-C11-" + g.id + "-" + String(g.leader.slug || "").toUpperCase() + "-" + model.dateStamp
+      };
+      const safe = String(g.leader.name || "membre").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-");
+      return { name: "Attestation-" + g.label.replace(" ", "-") + "-" + safe + ".pdf", bytes: certificatePdf(person, model, image) };
+    });
+    return zipFiles(files);
+  }
+
+  root.AmcPdf = { reportPdf, certificatePdf, certificatesZip, ordinal, num };
+})(typeof window !== "undefined" ? window : globalThis);
+
+function medal(i) {
+  if (i === 0) return '<span class="medal gold" aria-label="Premier">1</span>';
+  if (i === 1) return '<span class="medal silver" aria-label="Deuxième">2</span>';
+  if (i === 2) return '<span class="medal bronze" aria-label="Troisième">3</span>';
+  return '<span class="rank" style="background:#18213b">' + (i + 1) + '</span>';
+}
+function place(i) { return i === 0 ? '1er' : (i + 1) + 'e'; }
+function cheer(p, rank) {
+  if (rank === 0 && p >= 45) return 'Félicitations, vous menez la caravane. Gardez ce rythme.';
+  if (p >= 70) return 'Excellent rythme. Le douar compte sur vous.';
+  if (p >= 40) return 'Belle avancée. Encore un effort et le groupe passe devant.';
+  if (p > 0) return 'Chaque pièce compte. Continuez, la chaleur se partage.';
+  return 'Le groupe démarre. La première pièce lance le classement.';
+}
+function linesOf(groupId) {
   const s = AMC.load();
   const st = AMC.stats(s);
   const g = AMC.GROUPS.find((x) => x.id === groupId);
   const lines = g.members.map((m) => {
-    const row = st.byMember[g.id][m[0]];
-    return { name: m[1], pieces: row.pieces, money: row.money, score: AMC.pts(row.pieces, row.money) };
+    const row = st.byMember[g.id][m[0]] || { pieces: 0, clothes: 0, books: 0, money: 0, name: m[1] };
+    return { slug: m[0], name: row.name || m[1], pieces: row.pieces, clothes: row.clothes || 0, books: row.books || 0, money: row.money, score: AMC.pts(row) };
   }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'fr'));
-  const p = AMC.pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / 4));
-  const top = Math.max(1, ...lines.map((row) => row.score));
-  return '<article class="share"><header><span>AMC · Caravane 11 · Douar Ilissi</span><b>' + g.label + '</b></header><ol>' + lines.map((row, i) => '<li><span class="rank" style="background:' + ranks[i] + '">' + (i + 1) + '</span><div><div class="who">' + AMC.esc(row.name) + '</div><div class="bar" style="margin:4px 0"><i style="--w:' + Math.round(row.score / top * 100) + '%;background:' + g.color + '"></i></div><div class="pts">' + AMC.fmt(row.pieces) + ' pcs · ' + AMC.fmt(row.money) + ' MAD</div></div><div class="pts"><b>' + AMC.fmt(row.score) + '</b><br>pts</div></li>').join('') + '</ol><footer>' + p + ' % de l\'objectif du groupe</footer></article>';
+  const share = Math.max(1, AMC.GROUPS.length);
+  const p = AMC.pct(st.byGroup[g.id].pieces, Math.round(st.pieceTarget / share));
+  return { g, lines, p, st };
+}
+function snapshot() {
+  const pack = linesOf('A');
+  const st = pack.st;
+  const byId = {};
+  AMC.GROUPS.forEach((g) => { byId[g.id] = linesOf(g.id); });
+  const groups = st.ranked.map((g, index) => {
+    const row = byId[g.id];
+    const members = row.lines.map((line, i) => ({ slug: line.slug, name: line.name, pieces: line.pieces, money: line.money, score: line.score, rank: i + 1 }));
+    return {
+      id: g.id, label: g.label, color: g.color, rank: index + 1,
+      pieces: g.pieces, money: g.money, score: g.score, percent: row.p,
+      cheer: cheer(row.p, index),
+      leader: members[0] || { slug: '', name: '—', pieces: 0, money: 0, score: 0, rank: 1 },
+      members: members
+    };
+  });
+  const d = new Date();
+  const months = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+  const stamp = String(d.getFullYear()) + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0');
+  return {
+    dateLabel: d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear(),
+    dateStamp: stamp,
+    pieces: st.pieces,
+    money: st.money,
+    points: groups.reduce((n, g) => n + g.score, 0),
+    daysLeft: AMC.daysLeft(),
+    groups: groups
+  };
 }
 function render() {
-  document.getElementById('cards').innerHTML = AMC.GROUPS.map((g) => card(g.id)).join('');
+  const data = snapshot();
+  const days = data.daysLeft;
+  const dayLabel = days > 1 ? 'Jours avant le 26 décembre' : days === 1 ? 'Jour avant le départ' : days === 0 ? 'Départ aujourd\'hui' : 'Après la date de départ';
+  const dayValue = days >= 0 ? AMC.fmt(days) : '—';
+  document.getElementById('sums').innerHTML = [
+    [AMC.fmt(data.pieces), 'Pièces'],
+    [AMC.fmt(data.money), 'Dons, MAD'],
+    [AMC.fmt(data.points), 'Points'],
+    [dayValue, dayLabel]
+  ].map((row) => '<div class="stat"><b>' + row[0] + '</b><span>' + row[1] + '</span></div>').join('');
+  document.getElementById('tops').innerHTML = data.groups.map((g, i) => {
+    const best = g.leader;
+    const faceUrl = AMC.memberPhoto(g.id, best.slug);
+    const face = faceUrl ? '<span class="top-face"><img src="' + AMC.esc(faceUrl) + '" alt=""></span>' : '<span class="top-face face-empty">' + AMC.esc(AMC.initials(best.name)) + '</span>';
+    return '<article class="top-card' + (i === 0 ? ' lead-place' : '') + '" style="--c:' + g.color + '"><div class="place-tag">' + place(i) + ' groupe</div><div class="row" style="align-items:center;margin:8px 0">' + medal(i) + face + '<div><b style="color:#0b1330">' + AMC.esc(best.name) + '</b><div class="hint">' + AMC.esc(g.label) + ' · tête de groupe</div></div></div><div class="meta"><b>' + AMC.fmt(best.score) + ' pts</b><span>' + AMC.fmt(best.pieces) + ' pcs</span></div><p class="cheer">' + AMC.esc(g.cheer) + '</p></article>';
+  }).join('');
+  document.getElementById('cards').innerHTML = AMC.GROUPS.map((group) => {
+    const g = data.groups.find((row) => row.id === group.id);
+    const top = Math.max(1, ...g.members.map((row) => row.score));
+    const rows = g.members.map((row, i) => '<li class="' + (i === 0 ? 'lead' : '') + '">' + medal(i) + '<div><div class="who">' + AMC.esc(row.name) + '</div><div class="bar" style="margin:4px 0"><i style="--w:' + Math.round(row.score / top * 100) + '%;background:' + g.color + '"></i></div><div class="pts">' + AMC.fmt(row.pieces) + ' pcs · ' + AMC.fmt(row.money) + ' MAD</div></div><div class="pts"><b>' + AMC.fmt(row.score) + '</b><br>pts</div></li>').join('');
+    return '<article class="share" style="--c:' + g.color + '"><header style="background:' + g.color + '"><div class="subhead"><b>' + AMC.esc(g.label) + '</b><span class="pill">' + place(g.rank - 1) + '</span></div><span>' + g.percent + ' % de la part du groupe</span></header><ol>' + rows + '</ol><footer><b>' + AMC.esc(g.cheer) + '</b></footer></article>';
+  }).join('');
 }
-document.getElementById('copy-all').onclick = async () => {
-  const text = AMC.GROUPS.map((g) => AMC.shareText(g.id)).join('\n\n');
-  try { await navigator.clipboard.writeText(text); document.getElementById('copied').textContent = 'Résumé copié.'; }
-  catch (e) { document.getElementById('copied').textContent = text; }
+function saveFile(bytes, name, type) {
+  const blob = new Blob([bytes], { type: type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+}
+async function logoImage() {
+  try {
+    const img = new Image();
+    img.src = 'logo.png';
+    await img.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width;
+    canvas.height = img.height;
+    const pen = canvas.getContext('2d');
+    pen.fillStyle = '#0b1330';
+    pen.fillRect(0, 0, canvas.width, canvas.height);
+    pen.drawImage(img, 0, 0);
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+    if (!blob) return null;
+    return { bytes: new Uint8Array(await blob.arrayBuffer()), w: canvas.width, h: canvas.height };
+  } catch (err) {
+    return null;
+  }
+}
+let busy = false;
+async function extract(button, make, done) {
+  if (busy) return;
+  busy = true;
+  button.disabled = true;
+  document.getElementById('pdf-msg').textContent = 'Préparation du document…';
+  try {
+    if (AMC.refresh) await AMC.refresh();
+    render();
+document.addEventListener('amc-photos', render);
+    const image = await logoImage();
+    const data = snapshot();
+    const file = done(data);
+    saveFile(make(data, image), file.name, file.type);
+    document.getElementById('pdf-msg').textContent = file.message;
+  } catch (err) {
+    document.getElementById('pdf-msg').textContent = 'Le document n\'a pas pu être préparé.';
+  }
+  button.disabled = false;
+  busy = false;
+}
+document.getElementById('pdf-report').onclick = function () {
+  extract(this, (data, image) => window.AmcPdf.reportPdf(data, image), (data) => ({
+    name: 'AMC-rapport-classement-' + data.dateStamp + '.pdf',
+    type: 'application/pdf',
+    message: 'Rapport téléchargé.'
+  }));
+};
+document.getElementById('pdf-certs').onclick = function () {
+  extract(this, (data, image) => window.AmcPdf.certificatesZip(data, image), (data) => ({
+    name: 'AMC-attestations-' + data.dateStamp + '.zip',
+    type: 'application/zip',
+    message: 'Attestations téléchargées, une par tête de groupe.'
+  }));
 };
 render();
 
+});
+
 </script>
+<script src="support-widget.js"></script>
 </body>
 </html>

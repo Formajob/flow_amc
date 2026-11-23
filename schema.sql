@@ -6,14 +6,20 @@
 -- Même projet Supabase « FLOW » que Juridique.
 -- Tables préfixées amc_ pour ne rien écraser.
 -- RLS activé, aucune policy anon : Juridique ne doit pas lire AMC, et l'inverse.
--- Les adresses se brancheront plus tard, depuis le login Flow. Aucun e-mail inventé ici.
+-- Aucun e-mail membre inventé. Le mot de passe admin n'est pas dans ce fichier.
 -- La collecte réelle part à zéro. Les objectifs ci-dessous sont une proposition, modifiable.
 
 create table if not exists public.amc_operators (
   email text primary key,
-  role text not null default 'saisie' check (role in ('saisie', 'admin')),
+  role text not null default 'membre' check (role in ('saisie', 'admin', 'membre')),
+  password_hash text,
   created_at timestamptz not null default now()
 );
+
+alter table public.amc_operators add column if not exists password_hash text;
+alter table public.amc_operators add column if not exists name text;
+alter table public.amc_operators drop constraint if exists amc_operators_role_check;
+alter table public.amc_operators add constraint amc_operators_role_check check (role in ('saisie', 'admin', 'membre'));
 
 create table if not exists public.amc_campaigns (
   id text primary key,
@@ -188,6 +194,8 @@ insert into public.amc_item_types (id, label, unit, is_money, sort_order) values
   ('jackets', 'Jackets', 'pièce', false, 7),
   ('manteaux', 'Manteaux', 'pièce', false, 8),
   ('chales', 'Châles', 'pièce', false, 9),
+  ('couverture', 'Couverture', 'pièce', false, 16),
+  ('livres', 'Livres', 'pièce', false, 11),
   ('argent', 'Dons', 'MAD', true, 10),
   ('paniers', 'Paniers', 'panier', false, 12),
   ('tri', 'Tri', 'tri', false, 13),
@@ -205,11 +213,12 @@ insert into public.amc_targets (campaign_id, item_id, qty, proposed) values
   ('caravane-11', 'jackets', 60, true),
   ('caravane-11', 'manteaux', 48, true),
   ('caravane-11', 'chales', 80, true),
+  ('caravane-11', 'livres', 0, true),
   ('caravane-11', 'argent', 20000, true)
 on conflict (campaign_id, item_id) do nothing;
 
 insert into public.amc_notices (campaign_id, title, body, created_at) values
-  ('caravane-11', 'Collecte ouverte', 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, et les dons.', '2026-10-24 09:00:00+00'),
+  ('caravane-11', 'Collecte ouverte', 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, couvertures et les dons.', '2026-10-24 09:00:00+00'),
   ('caravane-11', 'Rappel de la caravane', 'Douar Ilissi, région d’Azilal, les 26 et 27 décembre 2026. Merci de transmettre les quantités au poste de saisie.', '2026-10-26 18:00:00+00');
 
 insert into public.amc_trips (id, campaign_id, label, role) values

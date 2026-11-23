@@ -29,6 +29,7 @@ const ITEMS = {
   jackets: ["Jackets", "pièce", false, 7],
   manteaux: ["Manteaux", "pièce", false, 8],
   chales: ["Châles", "pièce", false, 9],
+  couverture: ["Couverture", "pièce", false, 16],
   livres: ["Livres", "pièce", false, 11],
   argent: ["Dons", "MAD", true, 10],
   paniers: ["Paniers", "panier", false, 12],
@@ -200,6 +201,7 @@ function checkLine(body) {
   if (!/^[a-z0-9_]{2,40}$/.test(member)) return { error: "Ce nom n'est pas dans ce groupe." }
   if (!ITEMS[item]) return { error: "Article inconnu." }
   if (!qty || Number.isNaN(qty)) return { error: "La quantité ne peut pas être 0." }
+  if (item === "couverture" && !Number.isInteger(qty)) return { error: "Le nombre de couvertures doit être un entier." }
   return {
     campaign_id: CAMPAIGN,
     group_id: CAMPAIGN + "-" + group,

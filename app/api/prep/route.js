@@ -15,6 +15,7 @@ const ITEMS = {
   jackets: ["Jackets", "pièce", false, 7],
   manteaux: ["Manteaux", "pièce", false, 8],
   chales: ["Châles", "pièce", false, 9],
+  couverture: ["Couverture", "pièce", false, 16],
   livres: ["Livres", "pièce", false, 11]
 }
 

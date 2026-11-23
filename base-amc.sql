@@ -194,6 +194,8 @@ insert into public.amc_item_types (id, label, unit, is_money, sort_order) values
   ('jackets', 'Jackets', 'pièce', false, 7),
   ('manteaux', 'Manteaux', 'pièce', false, 8),
   ('chales', 'Châles', 'pièce', false, 9),
+  ('couverture', 'Couverture', 'pièce', false, 16),
+  ('livres', 'Livres', 'pièce', false, 11),
   ('argent', 'Dons', 'MAD', true, 10),
   ('paniers', 'Paniers', 'panier', false, 12),
   ('tri', 'Tri', 'tri', false, 13),
@@ -211,11 +213,12 @@ insert into public.amc_targets (campaign_id, item_id, qty, proposed) values
   ('caravane-11', 'jackets', 60, true),
   ('caravane-11', 'manteaux', 48, true),
   ('caravane-11', 'chales', 80, true),
+  ('caravane-11', 'livres', 0, true),
   ('caravane-11', 'argent', 20000, true)
 on conflict (campaign_id, item_id) do nothing;
 
 insert into public.amc_notices (campaign_id, title, body, created_at) values
-  ('caravane-11', 'Collecte ouverte', 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, et les dons.', '2026-10-24 09:00:00+00'),
+  ('caravane-11', 'Collecte ouverte', 'La collecte d’hiver est ouverte. Pantalons, pulls en laine, pyjamas, peignoirs, djellabas, jackets, manteaux, châles, couvertures et les dons.', '2026-10-24 09:00:00+00'),
   ('caravane-11', 'Rappel de la caravane', 'Douar Ilissi, région d’Azilal, les 26 et 27 décembre 2026. Merci de transmettre les quantités au poste de saisie.', '2026-10-26 18:00:00+00');
 
 insert into public.amc_trips (id, campaign_id, label, role) values
@@ -229,5 +232,7 @@ on conflict (id) do nothing;
 
 insert into public.amc_members (id, group_id, name, sort_order) values
   ('E-ashraf', 'caravane-11-E', 'Ashraf', 1),
-  ('E-chaymaa', 'caravane-11-E', 'Chaymaa', 2)
+  ('E-chaymaa', 'caravane-11-E', 'Chaymaa', 2),
+  ('E-salma_harama', 'caravane-11-E', 'Salma Harama', 3),
+  ('E-ali_bousfiha', 'caravane-11-E', 'Ali Bousfiha', 4)
 on conflict (id) do nothing;
